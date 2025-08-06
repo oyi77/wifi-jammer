@@ -6,6 +6,7 @@ Command-line interface for WiFi jamming tool.
 import sys
 import os
 import signal
+import platform
 import click
 from rich.console import Console
 from rich.table import Table
@@ -69,10 +70,38 @@ class WiFiJammerCLI:
         table = Table(title="Available Wireless Interfaces")
         table.add_column("Interface", style="cyan")
         table.add_column("Status", style="green")
+        table.add_column("Type", style="blue")
         
         for iface in interfaces:
-            status = "Available" if os.path.exists(f"/sys/class/net/{iface}") else "Not Available"
-            table.add_row(iface, status)
+            # Check if interface exists and is wireless
+            if os.path.exists(f"/sys/class/net/{iface}"):
+                status = "Available"
+                interface_type = "Wireless"
+            elif platform.system() == "Darwin":  # macOS
+                # Use macOS-specific status checking
+                try:
+                    from .utils.macos_interfaces import check_interface_status, get_interface_info
+                    status = check_interface_status(iface)
+                    info = get_interface_info(iface)
+                    interface_type = info.get('type', 'Unknown')
+                except ImportError:
+                    # Fallback method
+                    try:
+                        import subprocess
+                        result = subprocess.run(['ifconfig', iface], capture_output=True, text=True)
+                        if result.returncode == 0:
+                            status = "Available"
+                            interface_type = "Wireless"
+                        else:
+                            status = "Not Available"
+                            interface_type = "Unknown"
+                    except:
+                        status = "Unknown"
+                        interface_type = "Unknown"
+            else:
+                status = "Not Available"
+                interface_type = "Unknown"
+            table.add_row(iface, status, interface_type)
         
         self.console.print(table)
         return interfaces

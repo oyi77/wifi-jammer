@@ -30,8 +30,47 @@ class ScapyNetworkScanner(INetworkScanner):
                 self.logger.warning("Windows has limited wireless interface support")
                 # Return dummy interface for testing
                 interfaces = ["Wi-Fi"]
+            elif platform.system() == "Darwin":  # macOS
+                # macOS - use specialized utilities
+                try:
+                    from ..utils.macos_interfaces import get_macos_wireless_interfaces
+                    interfaces = get_macos_wireless_interfaces()
+                    
+                    if not interfaces:
+                        self.logger.warning("No wireless interfaces detected on macOS")
+                        self.logger.info("This tool may have limited functionality on macOS")
+                        return []
+                        
+                except ImportError:
+                    # Fallback method if macOS utilities not available
+                    try:
+                        import subprocess
+                        result = subprocess.run(['system_profiler', 'SPAirPortDataType'], 
+                                             capture_output=True, text=True, timeout=10)
+                        if result.returncode == 0:
+                            # Parse system_profiler output to find wireless interfaces
+                            lines = result.stdout.split('\n')
+                            for line in lines:
+                                if 'Interface:' in line:
+                                    iface = line.split(':')[1].strip()
+                                    if iface and iface not in interfaces:
+                                        interfaces.append(iface)
+                    except Exception as e:
+                        self.logger.warning(f"Could not get wireless interfaces: {e}")
+                    
+                    # Fallback: try common macOS wireless interface names
+                    if not interfaces:
+                        common_wireless = ['en0', 'en1']
+                        for iface in get_if_list():
+                            if iface in common_wireless:
+                                interfaces.append(iface)
+                    
+                    if not interfaces:
+                        self.logger.warning("No wireless interfaces detected on macOS")
+                        return []
+                    
             else:
-                # Unix-like systems
+                # Linux and other Unix-like systems
                 for iface in get_if_list():
                     if iface.startswith(('wlan', 'wifi', 'ath')):
                         interfaces.append(iface)
