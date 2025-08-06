@@ -15,9 +15,15 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Prompt, Confirm
 
 from .core.interfaces import AttackType, AttackConfig
+from .core.platform_interface import PlatformInterfaceFactory
 from .scanner import ScapyNetworkScanner
 from .factory import AttackFactory
 from .utils import RichLogger
+from .utils.warning_suppressor import setup_warning_suppression
+
+
+# Setup warning suppression
+setup_warning_suppression()
 
 
 class WiFiJammerCLI:
@@ -29,6 +35,7 @@ class WiFiJammerCLI:
         self.scanner = ScapyNetworkScanner(self.logger)
         self.factory = AttackFactory()
         self.current_attack = None
+        self.platform_interface = PlatformInterfaceFactory.create()
     
     def check_root(self):
         """Check if running as root."""
@@ -61,50 +68,44 @@ class WiFiJammerCLI:
     
     def list_interfaces(self):
         """List available wireless interfaces."""
-        interfaces = self.scanner.get_interface_list()
+        # Get all interfaces first
+        all_interfaces = self.platform_interface.get_all_interfaces()
+        wireless_interfaces = self.platform_interface.get_wireless_interfaces()
         
-        if not interfaces:
-            self.logger.error("No wireless interfaces found!")
+        if not all_interfaces:
+            self.logger.error("No network interfaces found!")
             return None
         
-        table = Table(title="Available Wireless Interfaces")
+        # Create table with all interfaces
+        table = Table(title="Available Network Interfaces")
         table.add_column("Interface", style="cyan")
         table.add_column("Status", style="green")
         table.add_column("Type", style="blue")
+        table.add_column("MAC Address", style="yellow")
+        table.add_column("Capabilities", style="magenta")
         
-        for iface in interfaces:
-            # Check if interface exists and is wireless
-            if os.path.exists(f"/sys/class/net/{iface}"):
-                status = "Available"
-                interface_type = "Wireless"
-            elif platform.system() == "Darwin":  # macOS
-                # Use macOS-specific status checking
-                try:
-                    from .utils.macos_interfaces import check_interface_status, get_interface_info
-                    status = check_interface_status(iface)
-                    info = get_interface_info(iface)
-                    interface_type = info.get('type', 'Unknown')
-                except ImportError:
-                    # Fallback method
-                    try:
-                        import subprocess
-                        result = subprocess.run(['ifconfig', iface], capture_output=True, text=True)
-                        if result.returncode == 0:
-                            status = "Available"
-                            interface_type = "Wireless"
-                        else:
-                            status = "Not Available"
-                            interface_type = "Unknown"
-                    except:
-                        status = "Unknown"
-                        interface_type = "Unknown"
-            else:
-                status = "Not Available"
-                interface_type = "Unknown"
-            table.add_row(iface, status, interface_type)
+        # Add all interfaces to table
+        for iface in all_interfaces:
+            capabilities = ", ".join(iface.capabilities) if iface.capabilities else "None"
+            table.add_row(
+                iface.name,
+                iface.status,
+                iface.type,
+                iface.mac_address,
+                capabilities
+            )
         
         self.console.print(table)
-        return interfaces
+        
+        # Return only wireless interface names for further use
+        wireless_names = [iface.name for iface in wireless_interfaces if iface.status == "Available"]
+        
+        if not wireless_names:
+            self.logger.warning("No available wireless interfaces found!")
+            self.logger.info("This tool requires wireless interfaces for full functionality.")
+            return []
+        
+        return wireless_names
     
     def scan_networks(self, interface: str, channel: int = None):
         """Scan for available networks."""
