@@ -24,14 +24,21 @@ class ScapyNetworkScanner(INetworkScanner):
         """Get list of available wireless interfaces."""
         interfaces = []
         try:
-            # Get wireless interfaces
-            for iface in get_if_list():
-                if iface.startswith(('wlan', 'wifi', 'ath')):
-                    interfaces.append(iface)
-            
-            # Fallback to all interfaces if no wireless found
-            if not interfaces:
-                interfaces = get_if_list()
+            import platform
+            if platform.system() == "Windows":
+                # Windows - limited wireless interface support
+                self.logger.warning("Windows has limited wireless interface support")
+                # Return dummy interface for testing
+                interfaces = ["Wi-Fi"]
+            else:
+                # Unix-like systems
+                for iface in get_if_list():
+                    if iface.startswith(('wlan', 'wifi', 'ath')):
+                        interfaces.append(iface)
+                
+                # Fallback to all interfaces if no wireless found
+                if not interfaces:
+                    interfaces = get_if_list()
                 
         except Exception as e:
             self.logger.error(f"Error getting interface list: {e}")
@@ -171,6 +178,11 @@ class ScapyNetworkScanner(INetworkScanner):
     def _set_monitor_mode(self, interface: str):
         """Set interface to monitor mode."""
         try:
+            import platform
+            if platform.system() == "Windows":
+                self.logger.warning("Monitor mode not supported on Windows")
+                return
+                
             # Check if already in monitor mode
             if "mon" in interface or "monitor" in interface:
                 return
@@ -185,6 +197,11 @@ class ScapyNetworkScanner(INetworkScanner):
     def _set_channel(self, interface: str, channel: int):
         """Set interface channel."""
         try:
+            import platform
+            if platform.system() == "Windows":
+                self.logger.warning("Channel setting not supported on Windows")
+                return
+                
             os.system(f"sudo iwconfig {interface} channel {channel}")
             time.sleep(0.1)
         except Exception as e:

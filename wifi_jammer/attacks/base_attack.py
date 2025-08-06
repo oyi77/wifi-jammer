@@ -99,6 +99,11 @@ class BaseAttack(IAttackStrategy, ABC):
     def _set_monitor_mode(self, interface: str):
         """Set interface to monitor mode."""
         try:
+            import platform
+            if platform.system() == "Windows":
+                self.logger.warning("Monitor mode not supported on Windows")
+                return
+                
             if "mon" not in interface and "monitor" not in interface:
                 os.system(f"sudo iwconfig {interface} mode monitor")
                 time.sleep(1)
@@ -108,6 +113,11 @@ class BaseAttack(IAttackStrategy, ABC):
     def _set_channel(self, interface: str, channel: int):
         """Set interface channel."""
         try:
+            import platform
+            if platform.system() == "Windows":
+                self.logger.warning("Channel setting not supported on Windows")
+                return
+                
             os.system(f"sudo iwconfig {interface} channel {channel}")
             time.sleep(0.1)
         except Exception as e:

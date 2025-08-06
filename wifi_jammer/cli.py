@@ -31,9 +31,21 @@ class WiFiJammerCLI:
     
     def check_root(self):
         """Check if running as root."""
-        if os.geteuid() != 0:
-            self.logger.error("This tool requires root privileges. Run with sudo.")
-            sys.exit(1)
+        import platform
+        
+        if platform.system() == "Windows":
+            # Windows - check for admin privileges
+            try:
+                import ctypes
+                if not ctypes.windll.shell32.IsUserAnAdmin():
+                    self.logger.warning("Some features may require administrator privileges on Windows.")
+            except:
+                self.logger.warning("Could not check Windows privileges.")
+        else:
+            # Unix-like systems
+            if os.geteuid() != 0:
+                self.logger.warning("Some features require root privileges. Run with sudo for full functionality.")
+                # Don't exit, just warn
     
     def show_banner(self):
         """Display tool banner."""

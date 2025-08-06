@@ -6,14 +6,18 @@ Advanced WiFi jamming tool built with Python, following SOLID principles and des
 
 ### One-liner installation:
 ```bash
-curl -sSL https://raw.githubusercontent.com/oyi77/wifi-jammer/main/quick_install.sh | sudo bash
+# Linux/macOS
+curl -sSL https://raw.githubusercontent.com/oyi77/wifi-jammer/main/quick_install.sh | bash
+
+# Windows (PowerShell)
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/oyi77/wifi-jammer/main/quick_install.sh" -UseBasicParsing).Content
 ```
 
 ### Manual installation:
 ```bash
 git clone https://github.com/oyi77/wifi-jammer.git
 cd wifi-jammer
-sudo bash install.sh
+bash install.sh
 ```
 
 ## 📋 Features
@@ -51,17 +55,29 @@ wifi_jammer/
 
 ### Interactive Mode:
 ```bash
+# Linux/macOS
 sudo wifi-jammer
+
+# Windows
+wifi-jammer.bat
 ```
 
 ### Command-line Options:
 ```bash
+# Linux/macOS
 sudo wifi-jammer --interface wlan0 --target 00:11:22:33:44:55 --attack deauth
+
+# Windows
+wifi-jammer.bat --interface "Wi-Fi" --target 00:11:22:33:44:55 --attack deauth
 ```
 
 ### Scan Only:
 ```bash
+# Linux/macOS
 sudo wifi-jammer --scan-only
+
+# Windows
+wifi-jammer.bat --scan-only
 ```
 
 ### Available Attacks:
@@ -75,9 +91,9 @@ sudo wifi-jammer --scan-only
 ## 🔧 Requirements
 
 - Python 3.8+
-- Root privileges (for wireless interface access)
+- Root privileges (for wireless interface access on Linux/macOS)
 - Wireless interface with monitor mode support
-- Linux or macOS
+- Linux, macOS, or Windows (limited functionality)
 
 ## 📦 Dependencies
 
