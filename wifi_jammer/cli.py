@@ -7,12 +7,17 @@ import sys
 import os
 import signal
 import platform
+import time
+import threading
 import click
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 from rich.prompt import Prompt, Confirm
+from rich.live import Live
+from rich.layout import Layout
+from rich.text import Text
 
 from .core.interfaces import AttackType, AttackConfig
 from .core.platform_interface import PlatformInterfaceFactory
@@ -26,6 +31,66 @@ from .utils.warning_suppressor import setup_warning_suppression
 setup_warning_suppression()
 
 
+class AttackProgressDisplay:
+    """Real-time attack progress display."""
+    
+    def __init__(self, console: Console):
+        self.console = console
+        self.layout = Layout()
+        self.layout.split_column(
+            Layout(name="header", size=3),
+            Layout(name="stats", size=8),
+            Layout(name="footer", size=3)
+        )
+        
+        self.layout["header"].update(Panel(
+            "[bold cyan]WiFi Jammer Attack in Progress[/bold cyan]\n"
+            "Press Ctrl+C to stop the attack",
+            style="cyan"
+        ))
+        
+        self.layout["footer"].update(Panel(
+            "[yellow]Monitoring attack progress...[/yellow]",
+            style="yellow"
+        ))
+    
+    def update_stats(self, stats):
+        """Update the statistics display."""
+        duration = stats.duration
+        pps = stats.packets_per_second
+        success_rate = stats.success_rate
+        
+        stats_text = f"""
+[bold]Attack Statistics:[/bold]
+
+[cyan]Packets Sent:[/cyan] {stats.packets_sent:,}
+[cyan]Packets Failed:[/cyan] {stats.packets_failed:,}
+[cyan]Success Rate:[/cyan] {success_rate:.1f}%
+[cyan]Packets/Second:[/cyan] {pps:.1f}
+[cyan]Duration:[/cyan] {duration:.1f}s
+
+[bold]Progress Bar:[/bold]
+"""
+        
+        # Create progress bar
+        if stats.packets_sent > 0:
+            progress_bar = "█" * min(50, int(stats.packets_sent / 10)) + "░" * (50 - min(50, int(stats.packets_sent / 10)))
+            stats_text += f"[green]{progress_bar}[/green] {stats.packets_sent:,} packets"
+        else:
+            stats_text += "[red]No packets sent yet[/red]"
+        
+        if stats.errors:
+            stats_text += f"\n\n[red]Recent Errors:[/red]\n"
+            for error in stats.errors[-3:]:  # Show last 3 errors
+                stats_text += f"• {error}\n"
+        
+        self.layout["stats"].update(Panel(stats_text, title="Live Statistics", style="blue"))
+    
+    def get_layout(self):
+        """Get the current layout."""
+        return self.layout
+
+
 class WiFiJammerCLI:
     """Main CLI class for WiFi jamming tool."""
     
@@ -36,6 +101,8 @@ class WiFiJammerCLI:
         self.factory = AttackFactory()
         self.current_attack = None
         self.platform_interface = PlatformInterfaceFactory.create()
+        self.progress_display = None
+        self.live_display = None
     
     def check_root(self):
         """Check if running as root."""
@@ -220,23 +287,36 @@ class WiFiJammerCLI:
         
         return config
     
+    def progress_callback(self, stats):
+        """Callback for progress updates."""
+        if self.progress_display:
+            self.progress_display.update_stats(stats)
+    
     def start_attack(self, config):
-        """Start the attack."""
+        """Start the attack with real-time progress display."""
         try:
             attack = self.factory.create_attack(config.attack_type)
             self.current_attack = attack
             
+            # Set up progress callback
+            attack.set_progress_callback(self.progress_callback)
+            
             if attack.execute(config):
                 self.logger.success(f"Attack started successfully!")
-                self.logger.info("Press Ctrl+C to stop the attack")
                 
-                # Wait for user to stop
-                try:
-                    while attack.is_running():
-                        import time
-                        time.sleep(1)
-                except KeyboardInterrupt:
-                    self.stop_attack()
+                # Create progress display
+                self.progress_display = AttackProgressDisplay(self.console)
+                
+                # Start live display
+                with Live(self.progress_display.get_layout(), refresh_per_second=2) as live:
+                    self.live_display = live
+                    
+                    try:
+                        while attack.is_running():
+                            time.sleep(0.5)
+                    except KeyboardInterrupt:
+                        self.stop_attack()
+                
             else:
                 self.logger.error("Failed to start attack!")
                 
