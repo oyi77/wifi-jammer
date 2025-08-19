@@ -1,0 +1,239 @@
+---
+description: WiFi Jammer Project Rules - Advanced WiFi jamming tool with SOLID principles
+globs: ["**/*.py", "**/*.md", "**/*.txt", "**/*.sh", "**/*.yml", "**/*.yaml"]
+alwaysApply: true
+---
+
+# WiFi Jammer Project Rules
+
+## Project Overview
+This is an advanced WiFi jamming tool built with SOLID principles, designed for educational and testing purposes. The tool provides comprehensive WiFi attack capabilities while maintaining security and ethical usage guidelines.
+
+## Core Architecture Principles
+
+### SOLID Design
+- **Single Responsibility**: Each class has one clear purpose
+- **Open/Closed**: Open for extension, closed for modification
+- **Liskov Substitution**: Subtypes are substitutable for base types
+- **Interface Segregation**: Clients depend only on interfaces they use
+- **Dependency Inversion**: High-level modules don't depend on low-level modules
+
+### Design Patterns
+- **Factory Pattern**: Attack strategy creation
+- **Strategy Pattern**: Different attack implementations
+- **Observer Pattern**: Progress monitoring and callbacks
+- **Template Method**: Base attack class with customizable steps
+- **Adapter Pattern**: Platform-specific interface abstraction
+
+## Code Quality Standards
+
+### Python Best Practices
+- **PEP 8 Compliance**: Follow Python style guide strictly
+- **Type Hints**: Use type annotations for all function parameters and return values
+- **Docstrings**: Google style docstrings for all public functions and classes
+- **Error Handling**: Use specific exception types, not generic exceptions
+
+### Code Structure
+- **Imports**: Group imports (standard library, third-party, local) with blank lines
+- **Functions**: Keep functions under 20 lines, methods under 15 lines
+- **Classes**: Keep classes focused and under 200 lines
+- **Modules**: Keep modules under 500 lines
+- **Comments**: Explain why, not what (code should be self-documenting)
+
+## Security Implementation Rules
+
+### Attack Safety
+- **Rate Limiting**: Implement configurable rate limits for all attacks
+- **User Consent**: Require explicit confirmation before executing attacks
+- **Target Validation**: Validate target addresses and networks before attacks
+- **Resource Limits**: Prevent resource exhaustion attacks
+- **Timeout Mechanisms**: Implement timeouts for all network operations
+
+### Privacy Protection
+- **Data Minimization**: Only collect necessary information
+- **Secure Logging**: Log sensitive operations without exposing details
+- **Network Respect**: Respect network boundaries and policies
+- **Audit Trails**: Maintain comprehensive logs for all operations
+- **Data Cleanup**: Securely dispose of collected data
+
+### Warning Systems
+- **Clear Disclaimers**: Prominent warnings about legal and ethical use
+- **Educational Purpose**: Emphasize educational/testing nature
+- **Legal Notice**: Include legal disclaimers in documentation
+- **Safety Guidelines**: Provide safety guidelines for users
+
+## Performance Optimization Rules
+
+### Resource Management
+- **Memory Efficiency**: Minimize memory allocations and garbage collection
+- **CPU Optimization**: Use efficient algorithms and data structures
+- **Network Efficiency**: Minimize packet overhead in WiFi attacks
+- **Async Operations**: Use async/await for I/O-bound operations
+- **Connection Pooling**: Reuse network connections when possible
+
+### Scalability Considerations
+- **Horizontal Scaling**: Design for multiple concurrent users
+- **Vertical Scaling**: Optimize for single-instance performance
+- **Resource Limits**: Implement configurable resource limits
+- **Progress Tracking**: Provide real-time progress updates
+- **Background Processing**: Handle long-running operations asynchronously
+
+## Testing Requirements
+
+### Coverage and Quality
+- **Coverage Target**: Minimum 90% code coverage
+- **Test Organization**: Mirror source code structure in tests
+- **Mock Usage**: Mock external dependencies and network calls
+- **Edge Cases**: Test boundary conditions and error scenarios
+- **Performance Tests**: Test performance under various conditions
+
+### Test Structure
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests**: Test component interactions
+- **Mock Tests**: Test with mocked external dependencies
+- **Error Tests**: Test error handling and edge cases
+- **Performance Tests**: Test performance under load
+
+## Documentation Standards
+
+### Code Documentation
+- **Inline Comments**: Explain complex logic and business rules
+- **API Documentation**: Comprehensive documentation for all public APIs
+- **Examples**: Include usage examples in docstrings
+- **Change Log**: Maintain detailed change log for all versions
+
+### User Documentation
+- **Installation Guide**: Step-by-step installation instructions
+- **Usage Examples**: Practical examples for common use cases
+- **Troubleshooting**: Common issues and solutions
+- **Security Guidelines**: Clear security and ethical usage guidelines
+- **API Reference**: Complete API documentation with examples
+
+## Project-Specific Rules
+
+### WiFi Attack Implementation
+- **Packet Creation**: Ensure proper packet structure and validation
+- **Interface Management**: Properly handle monitor mode and channel setting
+- **Platform Detection**: Robust OS and capability detection
+- **Error Handling**: Graceful handling of network errors and timeouts
+- **Progress Tracking**: Real-time attack progress monitoring
+
+### Network Scanner
+- **Interface Detection**: Cross-platform interface discovery
+- **Network Discovery**: Efficient network scanning algorithms
+- **Data Parsing**: Robust parsing of network information
+- **Platform Support**: Linux, macOS, and Windows compatibility
+- **Performance**: Optimize scanning speed and accuracy
+
+### CLI Interface
+- **User Experience**: Intuitive and responsive command-line interface
+- **Progress Display**: Rich terminal output with progress bars
+- **Error Messages**: Clear and actionable error messages
+- **Help System**: Comprehensive help and usage information
+- **Configuration**: Flexible configuration management
+
+## File Organization
+
+### Directory Structure
+```
+wifi_jammer/
+├── attacks/          # Attack strategy implementations
+├── core/            # Core interfaces and abstractions
+├── factory/         # Factory pattern implementations
+├── scanner/         # Network scanning functionality
+├── utils/           # Utility functions and helpers
+└── cli.py          # Command-line interface
+```
+
+### Import Organization
+1. Standard library imports
+2. Third-party imports
+3. Local project imports
+4. Blank line between groups
+
+## Error Handling Guidelines
+
+### Exception Types
+- **NetworkError**: Network-related issues
+- **ConfigurationError**: Configuration problems
+- **PermissionError**: Insufficient privileges
+- **ValidationError**: Input validation failures
+- **PlatformError**: Platform-specific issues
+
+### Error Messages
+- **Clear**: Easy to understand error descriptions
+- **Actionable**: Provide specific steps to resolve
+- **Contextual**: Include relevant context information
+- **User-Friendly**: Avoid technical jargon when possible
+
+## Performance Guidelines
+
+### Optimization Priorities
+1. **Network Efficiency**: Minimize packet overhead
+2. **Memory Usage**: Efficient data structures and algorithms
+3. **CPU Usage**: Optimize computational complexity
+4. **I/O Operations**: Minimize blocking operations
+5. **Resource Cleanup**: Proper resource management
+
+### Monitoring and Profiling
+- **Performance Metrics**: Track key performance indicators
+- **Resource Usage**: Monitor memory and CPU usage
+- **Network Performance**: Measure packet success rates
+- **User Experience**: Track response times and usability
+
+## Security Best Practices
+
+### Input Validation
+- **Sanitization**: Clean and validate all user inputs
+- **Boundary Checks**: Validate numeric ranges and limits
+- **Format Validation**: Ensure proper data formats
+- **Type Safety**: Use strong typing for all inputs
+
+### Access Control
+- **Privilege Checks**: Verify required permissions
+- **Resource Limits**: Prevent resource exhaustion
+- **Rate Limiting**: Control operation frequency
+- **Audit Logging**: Track all security-relevant operations
+
+## Maintenance and Updates
+
+### Code Review Process
+- **SOLID Principles**: Verify adherence to design principles
+- **Security Review**: Check for security vulnerabilities
+- **Performance Review**: Ensure optimal performance
+- **Documentation Review**: Verify documentation completeness
+- **Test Coverage**: Ensure adequate test coverage
+
+### Version Management
+- **Semantic Versioning**: Follow semantic versioning principles
+- **Change Documentation**: Document all changes and improvements
+- **Backward Compatibility**: Maintain compatibility when possible
+- **Migration Guides**: Provide upgrade instructions for users
+
+## Legal and Ethical Considerations
+
+### Usage Guidelines
+- **Educational Purpose**: Tool is for educational and testing use only
+- **Legal Compliance**: Users must comply with local laws and regulations
+- **Ethical Use**: Only test networks you own or have permission to test
+- **Responsibility**: Users are responsible for their actions
+
+### Disclaimer Requirements
+- **Legal Notice**: Include legal disclaimers in all documentation
+- **Usage Warnings**: Clear warnings about legal and ethical use
+- **Liability**: Disclaim liability for misuse of the tool
+- **Compliance**: Ensure compliance with relevant regulations
+
+## Future Development
+
+### Extensibility
+- **Plugin Architecture**: Support for custom attack strategies
+- **Configuration System**: Flexible configuration management
+- **API Development**: RESTful API for programmatic access
+- **Integration**: Support for third-party tools and frameworks
+
+### Feature Roadmap
+- **Advanced Attacks**: New attack types and techniques
+- **Network Analysis**: Enhanced network analysis capabilities
+- **Reporting**: Comprehensive attack and scan reporting
+- **Automation**: Automated testing and validation workflows

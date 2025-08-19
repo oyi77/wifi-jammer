@@ -3,14 +3,14 @@ Deauthentication attack implementation.
 """
 
 from scapy.all import *
-from scapy.layers.dot11 import Dot11, Dot11Deauth
+from scapy.layers.dot11 import Dot11, Dot11Deauth, Dot11Disas
 from .base_attack import BaseAttack
 
 
 class DeauthAttack(BaseAttack):
     """Deauthentication attack implementation."""
     
-    def _create_packet(self) -> Packet:
+    def _create_packet(self) -> Optional[Packet]:
         """Create deauthentication packet."""
         if not self._config.target_bssid:
             self.logger.warning("No target BSSID specified for deauth attack")
@@ -38,7 +38,7 @@ class DeauthAttack(BaseAttack):
 class DisassocAttack(BaseAttack):
     """Disassociation attack implementation."""
     
-    def _create_packet(self) -> Packet:
+    def _create_packet(self) -> Optional[Packet]:
         """Create disassociation packet."""
         if not self._config.target_bssid:
             self.logger.warning("No target BSSID specified for disassoc attack")

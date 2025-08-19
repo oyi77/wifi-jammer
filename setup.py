@@ -28,6 +28,18 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=requirements,
+    extras_require={
+        'dev': [
+            'pytest>=7.0.0',
+            'pytest-cov>=4.0.0',
+            'flake8>=6.0.0',
+            'black>=23.0.0',
+            'isort>=5.12.0',
+        ],
+        'crypto': [
+            'cryptography>=45.0.6',
+        ]
+    },
     entry_points={
         "console_scripts": [
             "wifi-jammer=wifi_jammer.cli:main",

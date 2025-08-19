@@ -1,0 +1,43 @@
+---
+description: |
+  Security Implementation Rules for the project. These rules ensure all security, privacy, and ethical requirements are enforced across all modules, with a focus on attack safety, privacy protection, warning systems, and project-specific security. Rules are always applied and must be reviewed and optimized for every project load. This file is dynamically adaptable for future extensibility and consistent with Paijo's absolute standards.
+globs: 
+  - "**/*.py"
+  - "**/*.md"
+  - "**/*.sh"
+  - "**/*.yml"
+  - "**/*.json"
+  - "**/*.toml"
+  - "**/*.env"
+  - "**/rules/*.mdc"
+alwaysApply: true
+---
+# Security Implementation Rules
+
+## Attack Safety
+- **Rate Limiting**: Implement configurable rate limits for all attacks
+- **User Consent**: Require explicit confirmation before executing attacks
+- **Target Validation**: Validate target addresses and networks before attacks
+- **Resource Limits**: Prevent resource exhaustion attacks
+- **Timeout Mechanisms**: Implement timeouts for all network operations
+
+## Privacy Protection
+- **Data Minimization**: Only collect necessary information
+- **Secure Logging**: Log sensitive operations without exposing details
+- **Network Respect**: Respect network boundaries and policies
+- **Audit Trails**: Maintain comprehensive logs for all operations
+- **Data Cleanup**: Securely dispose of collected data
+
+## Warning Systems
+- **Clear Disclaimers**: Prominent warnings about legal and ethical use
+- **Educational Purpose**: Emphasize educational/testing nature
+- **Legal Notice**: Include legal disclaimers in documentation
+- **Safety Guidelines**: Provide safety guidelines for users
+
+## Project-Specific Security
+- **WiFi Attacks**: All attacks must be rate-limited and safe
+- **Platform Detection**: Robust OS and capability detection
+- **Network Scanning**: Respect privacy and network policies
+- **Audit Logging**: Comprehensive logging for all operations
+- **CLI Warnings**: Clear warnings about legal and ethical use
+

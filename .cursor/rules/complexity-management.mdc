@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Complexity Management Rules
+
+## Code Complexity
+- **Cyclomatic Complexity**: Keep functions under complexity 10
+- **Cognitive Complexity**: Keep methods simple and readable
+- **Nesting Depth**: Maximum 3 levels of nesting
+- **Function Length**: Keep functions under 20 lines
+- **Class Size**: Keep classes under 200 lines
+- **Module Size**: Keep modules under 500 lines
+
+## Algorithm Complexity
+- **Time Complexity**: Document and optimize time complexity
+- **Space Complexity**: Consider memory usage in algorithms
+- **Big O Notation**: Use appropriate algorithms for data size
+- **Performance Profiling**: Profile critical paths regularly
+- **Optimization**: Optimize bottlenecks identified through profiling
+
+## Architectural Complexity
+- **Component Count**: Limit number of components in a module
+- **Dependency Graph**: Keep dependency graph shallow and wide
+- **Interface Complexity**: Keep interfaces simple and focused
+- **Configuration Complexity**: Minimize configuration options
+- **Feature Flags**: Use feature flags for complex feature toggles
+
+## Cognitive Load
+- **Naming**: Use descriptive, self-documenting names
+- **Abstraction Levels**: Maintain consistent abstraction levels
+- **Mental Models**: Design for intuitive mental models
+- **Documentation**: Document complex business logic thoroughly
+- **Examples**: Provide examples for complex operations

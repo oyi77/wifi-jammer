@@ -1,0 +1,38 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Project Architecture Rules
+
+## System Architecture
+- **Modular Design**: Break system into independent, testable modules
+- **Layered Architecture**: Separate concerns into distinct layers (UI, Business Logic, Data Access)
+- **Service-Oriented**: Use service classes for business logic operations
+- **Repository Pattern**: Abstract data access through repository interfaces
+- **Event-Driven**: Use events for loose coupling between components
+
+## Component Design
+- **Single Responsibility**: Each component has one clear purpose
+- **High Cohesion**: Related functionality grouped together
+- **Low Coupling**: Minimal dependencies between components
+- **Interface Segregation**: Expose only necessary methods
+- **Dependency Injection**: Inject dependencies rather than creating them
+
+## Data Flow
+- **Unidirectional Data Flow**: Data flows in one direction through the system
+- **Immutable Data**: Prefer immutable data structures where possible
+- **State Management**: Centralized state management for complex state
+- **Event Sourcing**: Use events for state changes and audit trails
+- **Caching Strategy**: Implement appropriate caching at different levels
+
+## Code Architecture
+- **SOLID Principles**: Implement all SOLID principles strictly
+- **Design Patterns**: Use Factory, Strategy, Adapter, Observer, and Command patterns
+- **Code Organization**: Keep related functionality together, separate concerns clearly
+- **Package Structure**: Implement proper package structure with `__init__.py` files
+
+- **SOLID Principles**: Implement all SOLID principles strictly
+- **Design Patterns**: Use Factory, Strategy, Adapter, Observer, and Command patterns
+- **Code Organization**: Keep related functionality together, separate concerns clearly
+- **Package Structure**: Implement proper package structure with `__init__.py` files

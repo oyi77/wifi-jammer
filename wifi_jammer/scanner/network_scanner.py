@@ -64,6 +64,7 @@ class ScapyNetworkScanner(INetworkScanner):
             interface_info = self._platform_interface.get_interface_info(interface)
             if not interface_info or interface_info.status != "Available":
                 self.logger.error(f"Interface {interface} is not available")
+                self._scanning = False
                 return []
             
             # Use platform-specific scanning
@@ -74,10 +75,10 @@ class ScapyNetworkScanner(INetworkScanner):
                 # Linux/Windows scanning
                 self._scan_standard_networks(interface, channel)
             
-            self._scanning = False
-            
         except Exception as e:
             self.logger.error(f"Error during network scan: {e}")
+        finally:
+            # Always ensure scanning state is reset
             self._scanning = False
         
         return self._networks.copy()

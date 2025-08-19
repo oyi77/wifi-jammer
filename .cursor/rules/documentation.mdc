@@ -1,0 +1,33 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Documentation Standards
+
+## Code Documentation
+- **Inline Comments**: Explain complex logic and business rules
+- **API Documentation**: Comprehensive documentation for all public APIs
+- **Examples**: Include usage examples in docstrings
+- **Change Log**: Maintain detailed change log for all versions
+
+## User Documentation
+- **Installation Guide**: Step-by-step installation instructions
+- **Usage Examples**: Practical examples for common use cases
+- **Troubleshooting**: Common issues and solutions
+- **Security Guidelines**: Clear security and ethical usage guidelines
+- **API Reference**: Complete API documentation with examples
+
+## Docstring Standards
+- **Google Style**: Use Google style docstrings for all functions and classes
+- **Parameter Documentation**: Document all parameters with types and descriptions
+- **Return Values**: Document return types and values
+- **Examples**: Include practical usage examples
+- **Exceptions**: Document exceptions that may be raised
+
+## Project Documentation
+- **README.md**: Keep updated with usage examples and installation
+- **API Reference**: Complete API documentation with examples
+- **Security Warnings**: Prominent security and legal disclaimers
+- **Contributing Guidelines**: Clear guidelines for contributors
+- **Changelog**: Detailed change log for all versions

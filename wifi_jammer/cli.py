@@ -114,13 +114,17 @@ class WiFiJammerCLI:
                 import ctypes
                 if not ctypes.windll.shell32.IsUserAnAdmin():
                     self.logger.warning("Some features may require administrator privileges on Windows.")
+                    return False
+                return True
             except:
                 self.logger.warning("Could not check Windows privileges.")
+                return False
         else:
             # Unix-like systems
             if os.geteuid() != 0:
                 self.logger.warning("Some features require root privileges. Run with sudo for full functionality.")
-                # Don't exit, just warn
+                return False
+            return True
     
     def show_banner(self):
         """Display tool banner."""
@@ -257,19 +261,26 @@ class WiFiJammerCLI:
             except ValueError:
                 self.logger.error("Please enter a valid number!")
     
-    def configure_attack(self, target_network, attack_type):
+    def configure_attack(self, attack_type):
         """Configure attack parameters."""
         config = AttackConfig(
             attack_type=attack_type,
-            target_bssid=target_network.bssid,
-            target_ssid=target_network.ssid,
-            channel=target_network.channel
+            target_bssid="",
+            target_ssid="",
+            channel=0
         )
+        
+        # Get target BSSID
+        config.target_bssid = Prompt.ask("Target BSSID")
         
         # Get interface
         interfaces = self.scanner.get_interface_list()
         if interfaces:
             config.interface = Prompt.ask("Interface", default=interfaces[0])
+        
+        # Get channel
+        channel = Prompt.ask("Channel", default="0")
+        config.channel = int(channel) if channel.isdigit() else 0
         
         # Get packet count
         count = Prompt.ask("Packet count (0 for unlimited)", default="0")
@@ -350,7 +361,8 @@ def main(interface, target, attack, count, delay, channel, verbose, scan_only):
     cli = WiFiJammerCLI()
     
     # Check root privileges
-    cli.check_root()
+    if not cli.check_root():
+        sys.exit(1) # Exit if root privileges are not available
     
     # Show banner
     cli.show_banner()
@@ -388,16 +400,7 @@ def main(interface, target, attack, count, delay, channel, verbose, scan_only):
             attack_type = AttackType(attack)
         
         # Configure attack
-        config = AttackConfig(
-            attack_type=attack_type,
-            target_bssid=target_network.bssid,
-            target_ssid=target_network.ssid,
-            channel=target_network.channel,
-            interface=interface,
-            count=count,
-            delay=delay,
-            verbose=verbose
-        )
+        config = cli.configure_attack(attack_type)
         
         # Start attack
         cli.start_attack(config)

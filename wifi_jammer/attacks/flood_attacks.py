@@ -4,14 +4,14 @@ Flood attack implementations.
 
 import random
 from scapy.all import *
-from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, Dot11Auth, Dot11AssoReq
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, Dot11Auth, Dot11AssoReq, Dot11ProbeResp
 from .base_attack import BaseAttack
 
 
 class BeaconFloodAttack(BaseAttack):
     """Beacon flood attack implementation."""
     
-    def _create_packet(self) -> Packet:
+    def _create_packet(self) -> Optional[Packet]:
         """Create beacon flood packet."""
         try:
             # Generate random SSID
@@ -41,7 +41,7 @@ class BeaconFloodAttack(BaseAttack):
 class AuthFloodAttack(BaseAttack):
     """Authentication flood attack implementation."""
     
-    def _create_packet(self) -> Packet:
+    def _create_packet(self) -> Optional[Packet]:
         """Create authentication flood packet."""
         if not self._config.target_bssid:
             self.logger.warning("No target BSSID specified for auth flood attack")
@@ -69,7 +69,7 @@ class AuthFloodAttack(BaseAttack):
 class AssocFloodAttack(BaseAttack):
     """Association flood attack implementation."""
     
-    def _create_packet(self) -> Packet:
+    def _create_packet(self) -> Optional[Packet]:
         """Create association flood packet."""
         if not self._config.target_bssid:
             self.logger.warning("No target BSSID specified for assoc flood attack")
@@ -99,7 +99,7 @@ class AssocFloodAttack(BaseAttack):
 class ProbeResponseFloodAttack(BaseAttack):
     """Probe response flood attack implementation."""
     
-    def _create_packet(self) -> Packet:
+    def _create_packet(self) -> Optional[Packet]:
         """Create probe response flood packet."""
         try:
             # Generate random SSID

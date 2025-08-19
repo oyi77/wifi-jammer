@@ -1,0 +1,33 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Performance Optimization Rules
+
+## Resource Management
+- **Memory Efficiency**: Minimize memory allocations and garbage collection
+- **CPU Optimization**: Use efficient algorithms and data structures
+- **Network Efficiency**: Minimize network overhead and latency
+- **Async Operations**: Use async/await for I/O-bound operations
+- **Connection Pooling**: Reuse network connections when possible
+
+## Scalability Considerations
+- **Horizontal Scaling**: Design for multiple concurrent users
+- **Vertical Scaling**: Optimize for single-instance performance
+- **Resource Limits**: Implement configurable resource limits
+- **Progress Tracking**: Provide real-time progress updates
+- **Background Processing**: Handle long-running operations asynchronously
+
+## Algorithm Optimization
+- **Time Complexity**: Document and optimize time complexity
+- **Space Complexity**: Consider memory usage in algorithms
+- **Big O Notation**: Use appropriate algorithms for data size
+- **Performance Profiling**: Profile critical paths regularly
+- **Bottleneck Identification**: Identify and optimize performance bottlenecks
+
+## Network Performance
+- **Packet Efficiency**: Minimize packet overhead in WiFi attacks
+- **Rate Limiting**: Implement intelligent rate limiting for attacks
+- **Connection Management**: Efficient connection handling and cleanup
+- **Resource Monitoring**: Monitor system resources during operations

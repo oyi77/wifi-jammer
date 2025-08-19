@@ -64,8 +64,40 @@ class WarningSuppressor:
         # Set environment variables to suppress warnings
         os.environ['PYTHONWARNINGS'] = 'ignore'
         os.environ['SCAPY_SUPPRESS_WARNINGS'] = '1'
+    
+    @staticmethod
+    def suppress_tripledes_warnings():
+        """Specifically suppress TripleDES deprecation warnings."""
+        # Suppress TripleDES deprecation warnings
+        warnings.filterwarnings("ignore", message=".*TripleDES.*")
+        warnings.filterwarnings("ignore", message=".*cryptography.*")
+        
+        # Suppress specific cryptography warnings
+        warnings.filterwarnings("ignore", message=".*has been moved to cryptography.hazmat.decrepit.*")
+        warnings.filterwarnings("ignore", message=".*will be removed from this module.*")
+        
+        # Set environment variable to disable cryptography warnings
+        os.environ['CRYPTOGRAPHY_DISABLE_FIPS'] = '1'
+    
+    @staticmethod
+    def modern_warning_suppression():
+        """Modern approach to warning suppression using latest libraries."""
+        # Use the latest warning suppression methods
+        WarningSuppressor.suppress_scapy_warnings()
+        WarningSuppressor.suppress_tripledes_warnings()
+        
+        # Suppress IPv4 address warnings (common in modern networks)
+        warnings.filterwarnings("ignore", message=".*No IPv4 address found.*")
+        
+        # Suppress network interface warnings
+        warnings.filterwarnings("ignore", message=".*more.*")
+        
+        # Set modern environment variables
+        os.environ['PYTHONWARNINGS'] = 'ignore'
+        os.environ['SCAPY_SUPPRESS_WARNINGS'] = '1'
+        os.environ['CRYPTOGRAPHY_DISABLE_FIPS'] = '1'
 
 
 def setup_warning_suppression():
-    """Setup warning suppression for the entire application."""
-    WarningSuppressor.suppress_all_warnings() 
+    """Setup modern warning suppression for the entire application."""
+    WarningSuppressor.modern_warning_suppression() 

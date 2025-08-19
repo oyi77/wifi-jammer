@@ -4,6 +4,8 @@ Base attack class for WiFi jamming attacks.
 
 import threading
 import time
+import os
+import random
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
@@ -60,6 +62,11 @@ class BaseAttack(IAttackStrategy, ABC):
         self._stats = AttackStats()
         self._progress_callback = None
     
+    @abstractmethod
+    def _create_packet(self) -> Optional[Packet]:
+        """Create the attack packet. Must be implemented by subclasses."""
+        pass
+    
     def execute(self, config: AttackConfig) -> bool:
         """Execute the attack with given configuration."""
         if self._running:
@@ -102,18 +109,15 @@ class BaseAttack(IAttackStrategy, ABC):
     
     def stop(self) -> None:
         """Stop the attack."""
+        if not self._running:
+            return
+        
         self._running = False
+        
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=2)
         
-        # Log final statistics
-        stats_dict = {
-            'packets_sent': self._stats.packets_sent,
-            'packets_failed': self._stats.packets_failed,
-            'duration': self._stats.duration,
-            'success_rate': self._stats.success_rate
-        }
-        self.logger.attack_stopped(stats_dict)
+        self._log_final_stats()
     
     def is_running(self) -> bool:
         """Check if attack is running."""
@@ -121,36 +125,37 @@ class BaseAttack(IAttackStrategy, ABC):
     
     def get_stats(self) -> AttackStats:
         """Get current attack statistics."""
-        return self._stats
+        return self._stats.copy() if hasattr(self._stats, 'copy') else self._stats
     
-    def set_progress_callback(self, callback):
-        """Set callback for progress updates."""
+    def set_progress_callback(self, callback: callable) -> None:
+        """Set progress callback function."""
         self._progress_callback = callback
     
-    @abstractmethod
-    def _create_packet(self) -> Packet:
-        """Create the attack packet. Must be implemented by subclasses."""
-        pass
-    
     def _attack_loop(self):
-        """Main attack loop with enhanced progress tracking."""
+        """Main attack loop."""
         packet_count = 0
         last_progress_time = time.time()
-        progress_interval = 2.0  # Update progress every 2 seconds
+        progress_interval = 5.0  # Log progress every 5 seconds
         
         while self._running:
             try:
+                # Create and send packet
                 packet = self._create_packet()
                 
                 if packet:
+                    # Send packet
                     sendp(packet, iface=self._config.interface, verbose=False)
+                    
                     self._stats.packets_sent += 1
                     self._stats.last_packet_time = time.time()
-                    packet_count = self._stats.packets_sent
+                    packet_count += 1
                     
                     # Call progress callback if set
                     if self._progress_callback:
-                        self._progress_callback(self._stats)
+                        try:
+                            self._progress_callback(self._stats)
+                        except Exception as e:
+                            self.logger.error(f"Progress callback error: {e}")
                     
                     # Log progress periodically
                     current_time = time.time()

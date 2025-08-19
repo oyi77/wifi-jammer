@@ -1,7 +1,8 @@
-scapy
+scapy>=2.6.1
 netifaces
 psutil
 colorama
 rich
 click
 pyyaml
+cryptography>=45.0.6
