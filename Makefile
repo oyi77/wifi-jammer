@@ -68,7 +68,7 @@ format: ## Format code with black and isort
 
 demo: ## Run the comprehensive demo
 	@echo "$(BLUE)Running WiFi Jammer Tool demo...$(NC)"
-	$(PYTHON) demo.py
+	$(PYTHON) tools/demo.py
 
 run: ## Run the tool in interactive mode
 	@echo "$(BLUE)Starting WiFi Jammer Tool...$(NC)"
