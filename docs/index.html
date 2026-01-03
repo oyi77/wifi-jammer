@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced WiFi jamming tool built with Python, following SOLID principles and designed for educational purposes.">
+    <title>WiFi Jammer - Advanced WiFi Jamming Tool</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo">WiFi Jammer</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usage.html">Usage</a></li>
+                <li><a href="demo.html">Demo</a></li>
+                <li><a href="troubleshooting.html">Troubleshooting</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>WiFi Jammer Tool</h1>
+            <p>Advanced WiFi jamming tool built with Python, following SOLID principles and designed for educational purposes.</p>
+            <div class="hero-buttons">
+                <a href="usage.html" class="btn btn-primary">Get Started</a>
+                <a href="demo.html" class="btn btn-secondary">View Demo</a>
+                <a href="https://github.com/oyi77/wifi-jammer" class="btn btn-secondary" target="_blank">GitHub</a>
+            </div>
+        </section>
+
+        <div class="alert alert-warning">
+            <strong>⚠️ Legal Notice:</strong> This tool is for educational purposes only! Use only on networks you own or have explicit permission to test. Respect local laws and regulations.
+        </div>
+
+        <section>
+            <h2>Features</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">⚔️</div>
+                    <h3>Multiple Attack Types</h3>
+                    <p>Deauth, Disassoc, Beacon Flood, Auth Flood, Assoc Flood, and Probe Response Flood attacks.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Network Scanning</h3>
+                    <p>Automatic network discovery and analysis with detailed information about available networks.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🖥️</div>
+                    <h3>Cross-Platform GUI</h3>
+                    <p>Modern graphical user interface using PyQt6 for Windows, macOS, and Linux.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📺</div>
+                    <h3>Modern TUI</h3>
+                    <p>Beautiful, responsive Text-based User Interface using Textual framework.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🎯</div>
+                    <h3>NetCut Tool</h3>
+                    <p>Interactive client discovery and selective device kicking capabilities.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🏗️</div>
+                    <h3>SOLID Architecture</h3>
+                    <p>Clean, maintainable code following SOLID principles and design patterns.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Quick Installation</h2>
+            <p>Get started with WiFi Jammer in minutes:</p>
+            
+            <h3>macOS (Automated Setup)</h3>
+            <pre><code>git clone https://github.com/oyi77/wifi-jammer.git
+cd wifi-jammer
+bash install.sh
+# or for quick install:
+bash quick_install.sh</code></pre>
+            <p>This will automatically install all dependencies, request Location Services permission, and set everything up for you.</p>
+
+            <h3>One-liner Installation (All Platforms)</h3>
+            <pre><code># Linux/macOS
+curl -sSL https://raw.githubusercontent.com/oyi77/wifi-jammer/main/quick_install.sh | bash
+
+# Windows (PowerShell)
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/oyi77/wifi-jammer/main/quick_install.sh" -UseBasicParsing).Content</code></pre>
+
+            <div class="alert alert-info">
+                <strong>💡 Tip:</strong> For detailed installation and usage instructions, see the <a href="usage.html">Usage Guide</a>.
+            </div>
+        </section>
+
+        <section>
+            <h2>Quick Start</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>📖 Usage Guide</h3>
+                    <p>Learn how to install, configure, and use WiFi Jammer with comprehensive examples.</p>
+                    <a href="usage.html" class="btn btn-primary" style="margin-top: 1rem;">Read Guide</a>
+                </div>
+                <div class="card">
+                    <h3>🎬 Demo</h3>
+                    <p>See WiFi Jammer in action with TUI and GUI screenshots and feature demonstrations.</p>
+                    <a href="demo.html" class="btn btn-primary" style="margin-top: 1rem;">View Demo</a>
+                </div>
+                <div class="card">
+                    <h3>🐛 Troubleshooting</h3>
+                    <p>Find solutions to common issues and platform-specific problems.</p>
+                    <a href="troubleshooting.html" class="btn btn-primary" style="margin-top: 1rem;">Get Help</a>
+                </div>
+                <div class="card">
+                    <h3>🤝 Contribute</h3>
+                    <p>Help improve WiFi Jammer by contributing code, reporting issues, or suggesting features.</p>
+                    <a href="contribute.html" class="btn btn-primary" style="margin-top: 1rem;">Contribute</a>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Architecture</h2>
+            <p>The tool follows SOLID principles for clean, maintainable code:</p>
+            <ul class="feature-list">
+                <li><strong>Single Responsibility:</strong> Each class has one clear purpose</li>
+                <li><strong>Open/Closed:</strong> Easy to extend with new attack types</li>
+                <li><strong>Liskov Substitution:</strong> All attack strategies are interchangeable</li>
+                <li><strong>Interface Segregation:</strong> Clean interfaces for each component</li>
+                <li><strong>Dependency Inversion:</strong> High-level modules don't depend on low-level modules</li>
+            </ul>
+
+            <h3>Core Components</h3>
+            <pre><code>wifi_jammer/
+├── core/           # Core interfaces and data structures
+├── scanner/        # Network scanning functionality
+├── attacks/        # Attack strategy implementations
+├── factory/        # Factory pattern for creating attacks
+├── utils/          # Utility functions and logging
+└── cli.py         # Command-line interface</code></pre>
+        </section>
+
+        <section>
+            <h2>Requirements</h2>
+            <ul class="feature-list">
+                <li>Python 3.8+</li>
+                <li>Root privileges (for wireless interface access on Linux/macOS)</li>
+                <li>Wireless interface with monitor mode support</li>
+                <li>Linux, macOS, or Windows (limited functionality)</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/oyi77/wifi-jammer" target="_blank">GitHub Repository</a>
+            <a href="https://github.com/oyi77/wifi-jammer/issues" target="_blank">Report Issues</a>
+            <a href="LICENSE" target="_blank">License (MIT)</a>
+        </div>
+        <p>&copy; 2024 WiFi Jammer Tool. Built by Paijo.</p>
+        <p><strong>Remember:</strong> With great power comes great responsibility. Use this tool ethically and legally!</p>
+    </footer>
+
+    <button class="scroll-to-top" aria-label="Scroll to top">↑</button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
+

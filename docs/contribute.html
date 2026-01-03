@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Contribution guidelines for WiFi Jammer - development setup, code style, and pull request process.">
+    <title>Contribute - WiFi Jammer</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo">WiFi Jammer</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usage.html">Usage</a></li>
+                <li><a href="demo.html">Demo</a></li>
+                <li><a href="troubleshooting.html">Troubleshooting</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="breadcrumbs">
+            <a href="index.html">Home</a> / Contribute
+        </div>
+
+        <section>
+            <h1>Contributing to WiFi Jammer</h1>
+            <p>Thank you for your interest in contributing to WiFi Jammer! This guide will help you get started with development and make your first contribution.</p>
+        </section>
+
+        <section>
+            <h2>Development Setup</h2>
+
+            <h3>1. Clone the Repository</h3>
+            <pre><code>git clone https://github.com/oyi77/wifi-jammer.git
+cd wifi-jammer</code></pre>
+
+            <h3>2. Create a Virtual Environment</h3>
+            <pre><code>python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate</code></pre>
+
+            <h3>3. Install Dependencies</h3>
+            <pre><code># Install base dependencies
+pip install -r requirements.txt
+
+# Install development dependencies
+pip install -r requirements-optional.txt
+
+# Install in development mode
+pip install -e .</code></pre>
+
+            <h3>4. Install Development Tools</h3>
+            <pre><code>pip install pytest pytest-cov flake8 black isort</code></pre>
+
+            <div class="alert alert-info">
+                <strong>Note:</strong> For macOS users, run <code>bash install.sh</code> or <code>bash quick_install.sh</code> to automatically set up Location Services permissions.
+            </div>
+        </section>
+
+        <section>
+            <h2>Code Style Guidelines</h2>
+            <p>WiFi Jammer follows strict code quality standards to ensure maintainability and readability.</p>
+
+            <h3>Python Best Practices</h3>
+            <ul class="feature-list">
+                <li><strong>PEP 8 Compliance:</strong> Follow Python style guide strictly</li>
+                <li><strong>Type Hints:</strong> Use type annotations for all function parameters and return values</li>
+                <li><strong>Docstrings:</strong> Google style docstrings for all public functions and classes</li>
+                <li><strong>Error Handling:</strong> Use specific exception types, not generic exceptions</li>
+            </ul>
+
+            <h3>Code Structure</h3>
+            <ul class="feature-list">
+                <li><strong>Functions:</strong> Keep functions under 20 lines, methods under 15 lines</li>
+                <li><strong>Classes:</strong> Keep classes focused and under 200 lines</li>
+                <li><strong>Modules:</strong> Keep modules under 500 lines</li>
+                <li><strong>Comments:</strong> Explain why, not what (code should be self-documenting)</li>
+            </ul>
+
+            <h3>Naming Conventions</h3>
+            <ul>
+                <li><strong>Variables and functions:</strong> <code>snake_case</code></li>
+                <li><strong>Classes:</strong> <code>PascalCase</code></li>
+                <li><strong>Constants:</strong> <code>UPPER_CASE</code></li>
+                <li><strong>Boolean names:</strong> Use <code>is_*</code>, <code>has_*</code>, <code>can_*</code> prefixes</li>
+            </ul>
+
+            <h3>Example: Adding a New Function</h3>
+            <pre><code>def scan_networks(interface: str, channel: int = None) -> List[Network]:
+    """
+    Scan for available WiFi networks on the specified interface.
+    
+    Args:
+        interface: The wireless interface name (e.g., 'en0', 'wlan0')
+        channel: Optional channel number to scan. If None, scans all channels.
+    
+    Returns:
+        List of Network objects representing discovered networks.
+    
+    Raises:
+        NetworkError: If scanning fails or interface is invalid.
+    
+    Example:
+        >>> networks = scan_networks('en0', channel=6)
+        >>> print(f"Found {len(networks)} networks")
+    """
+    # Implementation here
+    pass</code></pre>
+        </section>
+
+        <section>
+            <h2>Architecture Overview</h2>
+            <p>WiFi Jammer follows SOLID principles and uses design patterns for clean, maintainable code.</p>
+
+            <h3>SOLID Principles</h3>
+            <ul class="feature-list">
+                <li><strong>Single Responsibility:</strong> Each class has one clear purpose</li>
+                <li><strong>Open/Closed:</strong> Open for extension, closed for modification</li>
+                <li><strong>Liskov Substitution:</strong> Subtypes are substitutable for base types</li>
+                <li><strong>Interface Segregation:</strong> Clients depend only on interfaces they use</li>
+                <li><strong>Dependency Inversion:</strong> High-level modules don't depend on low-level modules</li>
+            </ul>
+
+            <h3>Design Patterns</h3>
+            <ul>
+                <li><strong>Factory Pattern:</strong> Attack strategy creation (<code>factory/attack_factory.py</code>)</li>
+                <li><strong>Strategy Pattern:</strong> Different attack implementations (<code>attacks/</code>)</li>
+                <li><strong>Observer Pattern:</strong> Progress monitoring and callbacks</li>
+                <li><strong>Template Method:</strong> Base attack class with customizable steps</li>
+                <li><strong>Adapter Pattern:</strong> Platform-specific interface abstraction</li>
+            </ul>
+
+            <h3>File Structure</h3>
+            <pre><code>wifi_jammer/
+├── core/              # Core interfaces and data structures
+│   ├── interfaces.py  # Attack types, configs, network models
+│   └── platform_interface.py  # Platform abstraction
+├── scanner/           # Network scanning functionality
+│   └── network_scanner.py
+├── attacks/           # Attack strategy implementations
+│   ├── base_attack.py
+│   ├── deauth_attack.py
+│   └── flood_attacks.py
+├── factory/           # Factory pattern for creating attacks
+│   └── attack_factory.py
+├── utils/             # Utility functions and logging
+│   ├── logger.py
+│   ├── validators.py
+│   └── platform_utils.py
+├── gui/               # Qt GUI components
+├── cli.py             # Command-line interface
+└── tui.py             # Text user interface</code></pre>
+        </section>
+
+        <section>
+            <h2>Adding New Attack Types</h2>
+            <p>To add a new attack type, follow these steps:</p>
+
+            <h3>1. Create Attack Class</h3>
+            <p>Create a new file in <code>wifi_jammer/attacks/</code>:</p>
+            <pre><code>from wifi_jammer.attacks.base_attack import BaseAttack
+from scapy.all import Packet
+
+class MyCustomAttack(BaseAttack):
+    """Custom attack implementation."""
+    
+    def _create_packet(self) -> Packet:
+        """
+        Create the attack packet.
+        
+        Returns:
+            Scapy packet for the attack.
+        """
+        # Implement packet creation logic
+        pass</code></pre>
+
+            <h3>2. Register in AttackFactory</h3>
+            <p>Add your attack to <code>wifi_jammer/factory/attack_factory.py</code>:</p>
+            <pre><code>from wifi_jammer.attacks.my_custom_attack import MyCustomAttack
+
+# In AttackFactory class
+def _register_attacks(self):
+    self._attacks = {
+        AttackType.DEAUTH: DeauthAttack,
+        AttackType.MY_CUSTOM: MyCustomAttack,  # Add your attack
+        # ... other attacks
+    }</code></pre>
+
+            <h3>3. Add Attack Type Enum</h3>
+            <p>Add the new attack type to <code>wifi_jammer/core/interfaces.py</code>:</p>
+            <pre><code>class AttackType(Enum):
+    DEAUTH = "deauth"
+    DISASSOC = "disassoc"
+    MY_CUSTOM = "my_custom"  # Add your attack type
+    # ... other types</code></pre>
+
+            <h3>4. Write Tests</h3>
+            <p>Create tests in <code>tests/test_attacks.py</code>:</p>
+            <pre><code>def test_my_custom_attack():
+    """Test custom attack creation and execution."""
+    factory = AttackFactory()
+    attack = factory.create_attack(AttackType.MY_CUSTOM)
+    # Add test assertions
+    assert attack is not None</code></pre>
+        </section>
+
+        <section>
+            <h2>Testing Requirements</h2>
+            <p>All code must be thoroughly tested before submission.</p>
+
+            <h3>Coverage Target</h3>
+            <ul class="feature-list">
+                <li><strong>Minimum 90% code coverage</strong></li>
+                <li>Test all public functions and classes</li>
+                <li>Include edge cases and error scenarios</li>
+            </ul>
+
+            <h3>Running Tests</h3>
+            <pre><code># Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=wifi_jammer --cov-report=html
+
+# Run specific test file
+pytest tests/test_attacks.py
+
+# Run with verbose output
+pytest -v</code></pre>
+
+            <h3>Test Organization</h3>
+            <ul>
+                <li>Mirror source code structure in tests</li>
+                <li>Use descriptive test names</li>
+                <li>Mock external dependencies and network calls</li>
+                <li>Test boundary conditions and error scenarios</li>
+            </ul>
+
+            <h3>Example Test</h3>
+            <pre><code>import pytest
+from unittest.mock import Mock, patch
+from wifi_jammer.attacks.deauth_attack import DeauthAttack
+from wifi_jammer.core.interfaces import AttackConfig, AttackType
+
+def test_deauth_attack_creation():
+    """Test deauth attack can be created."""
+    attack = DeauthAttack()
+    assert attack is not None
+    assert attack.attack_type == AttackType.DEAUTH
+
+@patch('scapy.all.sendp')
+def test_deauth_attack_execution(mock_sendp):
+    """Test deauth attack execution."""
+    config = AttackConfig(
+        attack_type=AttackType.DEAUTH,
+        target_bssid="00:11:22:33:44:55",
+        interface="wlan0",
+        count=10
+    )
+    attack = DeauthAttack()
+    result = attack.execute(config)
+    assert result is True
+    assert mock_sendp.called</code></pre>
+        </section>
+
+        <section>
+            <h2>Code Quality Tools</h2>
+
+            <h3>Linting</h3>
+            <pre><code># Run flake8
+flake8 wifi_jammer/
+
+# Run with specific rules
+flake8 wifi_jammer/ --max-line-length=88</code></pre>
+
+            <h3>Formatting</h3>
+            <pre><code># Format code with black
+black wifi_jammer/
+
+# Check formatting without changes
+black --check wifi_jammer/
+
+# Sort imports
+isort wifi_jammer/</code></pre>
+
+            <h3>Type Checking</h3>
+            <pre><code># Run mypy (if installed)
+mypy wifi_jammer/</code></pre>
+        </section>
+
+        <section>
+            <h2>Pull Request Process</h2>
+
+            <h3>1. Create a Branch</h3>
+            <pre><code>git checkout -b feature/my-new-feature
+# or
+git checkout -b fix/bug-description</code></pre>
+
+            <h3>2. Make Your Changes</h3>
+            <ul>
+                <li>Write clean, well-documented code</li>
+                <li>Follow code style guidelines</li>
+                <li>Add tests for new functionality</li>
+                <li>Update documentation if needed</li>
+            </ul>
+
+            <h3>3. Commit Your Changes</h3>
+            <pre><code>git add .
+git commit -m "Add feature: description of changes"
+# Use clear, descriptive commit messages</code></pre>
+
+            <h3>4. Run Tests and Linters</h3>
+            <pre><code># Run tests
+pytest
+
+# Check code style
+black --check wifi_jammer/
+flake8 wifi_jammer/
+
+# Check coverage
+pytest --cov=wifi_jammer --cov-report=term</code></pre>
+
+            <h3>5. Push and Create Pull Request</h3>
+            <pre><code>git push origin feature/my-new-feature</code></pre>
+            <p>Then create a pull request on GitHub with:</p>
+            <ul>
+                <li>Clear description of changes</li>
+                <li>Reference to related issues (if any)</li>
+                <li>Screenshots (for UI changes)</li>
+                <li>Test results</li>
+            </ul>
+
+            <h3>6. Code Review</h3>
+            <p>Your PR will be reviewed for:</p>
+            <ul class="feature-list">
+                <li>Code quality and style compliance</li>
+                <li>Test coverage (minimum 90%)</li>
+                <li>SOLID principles adherence</li>
+                <li>Security considerations</li>
+                <li>Documentation completeness</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Code Review Checklist</h2>
+            <p>Before submitting a PR, ensure:</p>
+            <ul class="feature-list">
+                <li>✅ All tests pass</li>
+                <li>✅ Code coverage is ≥90%</li>
+                <li>✅ Code follows PEP 8 style guide</li>
+                <li>✅ Type hints are present for all functions</li>
+                <li>✅ Docstrings follow Google style</li>
+                <li>✅ No linter errors or warnings</li>
+                <li>✅ Code is formatted with black</li>
+                <li>✅ Imports are sorted with isort</li>
+                <li>✅ SOLID principles are followed</li>
+                <li>✅ Error handling is appropriate</li>
+                <li>✅ Documentation is updated</li>
+                <li>✅ Security considerations are addressed</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Reporting Issues</h2>
+            <p>Found a bug or have a feature request? Please create an issue on GitHub.</p>
+
+            <h3>Bug Reports</h3>
+            <p>Include the following information:</p>
+            <ul>
+                <li>Operating system and version</li>
+                <li>Python version</li>
+                <li>WiFi Jammer version</li>
+                <li>Steps to reproduce</li>
+                <li>Expected behavior</li>
+                <li>Actual behavior</li>
+                <li>Error messages or logs</li>
+            </ul>
+
+            <h3>Feature Requests</h3>
+            <p>Describe:</p>
+            <ul>
+                <li>What you want to achieve</li>
+                <li>Why this feature would be useful</li>
+                <li>How it should work</li>
+                <li>Any alternatives you've considered</li>
+            </ul>
+
+            <p><a href="https://github.com/oyi77/wifi-jammer/issues/new" target="_blank" class="btn btn-primary">Create Issue on GitHub</a></p>
+        </section>
+
+        <section>
+            <h2>Getting Help</h2>
+            <p>Need help getting started or have questions?</p>
+            <ul>
+                <li>Check the <a href="usage.html">Usage Guide</a></li>
+                <li>Read the <a href="troubleshooting.html">Troubleshooting Guide</a></li>
+                <li>Browse <a href="https://github.com/oyi77/wifi-jammer/issues" target="_blank">existing issues</a></li>
+                <li>Start a <a href="https://github.com/oyi77/wifi-jammer/discussions" target="_blank">discussion</a></li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>License</h2>
+            <p>By contributing to WiFi Jammer, you agree that your contributions will be licensed under the MIT License.</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/oyi77/wifi-jammer" target="_blank">GitHub Repository</a>
+            <a href="https://github.com/oyi77/wifi-jammer/issues" target="_blank">Report Issues</a>
+            <a href="LICENSE" target="_blank">License (MIT)</a>
+        </div>
+        <p>&copy; 2024 WiFi Jammer Tool. Built by Paijo.</p>
+    </footer>
+
+    <button class="scroll-to-top" aria-label="Scroll to top">↑</button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
+

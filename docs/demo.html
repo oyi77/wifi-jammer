@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="See WiFi Jammer in action with TUI and GUI demonstrations and screenshots.">
+    <title>Demo - WiFi Jammer</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo">WiFi Jammer</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usage.html">Usage</a></li>
+                <li><a href="demo.html">Demo</a></li>
+                <li><a href="troubleshooting.html">Troubleshooting</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="breadcrumbs">
+            <a href="index.html">Home</a> / Demo
+        </div>
+
+        <section>
+            <h1>WiFi Jammer Demo</h1>
+            <p>See WiFi Jammer in action with both Text User Interface (TUI) and Graphical User Interface (GUI) demonstrations.</p>
+        </section>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active">TUI Demo</button>
+                <button class="tab-button">GUI Demo</button>
+            </div>
+
+            <!-- TUI Demo Tab -->
+            <div class="tab-content active">
+                <section>
+                    <h2>Text User Interface (TUI)</h2>
+                    <p>The TUI provides a modern, interactive terminal experience built with the Textual framework. It offers a clean, responsive interface for network scanning and attack configuration.</p>
+
+                    <div class="screenshot">
+                        <img src="assets/images/tui-screenshot.png" alt="WiFi Jammer TUI Interface" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display:none; padding: 2rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; text-align: center;">
+                            <p style="color: var(--text-secondary);">TUI Screenshot placeholder. Please add <code>tui-screenshot.png</code> to <code>assets/images/</code></p>
+                        </div>
+                        <p class="screenshot-caption">WiFi Jammer TUI - Network Scanner View</p>
+                    </div>
+
+                    <h3>Key Features</h3>
+                    <ul class="feature-list">
+                        <li><strong>Network Scanning:</strong> Real-time network discovery with detailed information</li>
+                        <li><strong>Interactive Selection:</strong> Navigate through discovered networks using keyboard</li>
+                        <li><strong>Attack Configuration:</strong> Select and configure attacks directly from the interface</li>
+                        <li><strong>Real-time Progress:</strong> Monitor attack progress with live statistics</li>
+                        <li><strong>Dark Theme:</strong> Easy on the eyes with a modern dark color scheme</li>
+                        <li><strong>Responsive Layout:</strong> Adapts to different terminal sizes</li>
+                    </ul>
+
+                    <h3>How to Launch TUI</h3>
+                    <pre><code># Using wrapper script
+sudo ./wifi-jammer.sh attack --tui
+
+# Using installed command
+sudo wifi-jammer attack --tui
+
+# Or directly
+sudo wifi-jammer --tui</code></pre>
+
+                    <h3>TUI Interface Overview</h3>
+                    <p>The TUI interface displays:</p>
+                    <ul>
+                        <li><strong>Network Table:</strong> Shows SSID, BSSID, Channel, RSSI, and Security information</li>
+                        <li><strong>Status Bar:</strong> Displays current scan status and interface information</li>
+                        <li><strong>Action Buttons:</strong> Stop Scan, Select & Attack buttons for quick actions</li>
+                        <li><strong>Keybinds Footer:</strong> Shows available keyboard shortcuts (q to quit, r to refresh)</li>
+                    </ul>
+
+                    <h3>Navigation</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>↑</code> / <code>↓</code></td>
+                                <td>Navigate through network list</td>
+                            </tr>
+                            <tr>
+                                <td><code>Enter</code></td>
+                                <td>Select network or activate button</td>
+                            </tr>
+                            <tr>
+                                <td><code>q</code></td>
+                                <td>Quit application</td>
+                            </tr>
+                            <tr>
+                                <td><code>r</code></td>
+                                <td>Refresh scan</td>
+                            </tr>
+                            <tr>
+                                <td><code>^p</code></td>
+                                <td>Open palette (theme customization)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-info">
+                        <strong>Tip:</strong> The TUI automatically detects available wireless interfaces and allows you to select one before scanning.
+                    </div>
+                </section>
+            </div>
+
+            <!-- GUI Demo Tab -->
+            <div class="tab-content">
+                <section>
+                    <h2>Graphical User Interface (GUI)</h2>
+                    <p>The GUI provides a modern, cross-platform graphical interface built with PyQt6. It offers an intuitive way to scan networks, configure attacks, and monitor progress.</p>
+
+                    <div class="screenshot">
+                        <img src="assets/images/gui-screenshot.png" alt="WiFi Jammer GUI Interface" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display:none; padding: 2rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; text-align: center;">
+                            <p style="color: var(--text-secondary);">GUI Screenshot placeholder. Please add <code>gui-screenshot.png</code> to <code>assets/images/</code></p>
+                        </div>
+                        <p class="screenshot-caption">WiFi Jammer GUI - Network Scanner Tab</p>
+                    </div>
+
+                    <h3>Key Features</h3>
+                    <ul class="feature-list">
+                        <li><strong>Tabbed Interface:</strong> Organized into Network Scanner, Attack Configuration, and Progress Monitor</li>
+                        <li><strong>Network Discovery:</strong> Visual network scanning with detailed information</li>
+                        <li><strong>Interface Selection:</strong> Dropdown menu to select wireless interfaces</li>
+                        <li><strong>Attack Configuration:</strong> Visual form to configure attack parameters</li>
+                        <li><strong>Progress Monitoring:</strong> Real-time attack progress and statistics</li>
+                        <li><strong>Cross-Platform:</strong> Works on Windows, macOS, and Linux</li>
+                    </ul>
+
+                    <h3>How to Launch GUI</h3>
+                    <pre><code># Using wrapper script
+sudo ./wifi-jammer.sh attack --gui
+
+# Using installed command
+sudo wifi-jammer --gui
+sudo wifi-jammer-gui
+
+# Or directly via Python module
+sudo ./venv/bin/python3 -m wifi_jammer.gui</code></pre>
+
+                    <h3>GUI Tabs Overview</h3>
+
+                    <h4>1. Network Scanner Tab</h4>
+                    <p>The Network Scanner tab allows you to:</p>
+                    <ul>
+                        <li>Select wireless interface from dropdown</li>
+                        <li>Scan for available networks</li>
+                        <li>View network details in a table (SSID, BSSID, Channel, RSSI, Encryption, Clients)</li>
+                        <li>Refresh interface list</li>
+                    </ul>
+
+                    <h4>2. Attack Configuration Tab</h4>
+                    <p>The Attack Configuration tab provides:</p>
+                    <ul>
+                        <li>Attack type selection (deauth, disassoc, beacon_flood, etc.)</li>
+                        <li>Target network selection</li>
+                        <li>Interface selection</li>
+                        <li>Channel configuration</li>
+                        <li>Packet count and delay settings</li>
+                        <li>Start/Stop attack controls</li>
+                    </ul>
+
+                    <h4>3. Progress Monitor Tab</h4>
+                    <p>The Progress Monitor tab displays:</p>
+                    <ul>
+                        <li>Real-time attack statistics</li>
+                        <li>Packets sent/failed counts</li>
+                        <li>Success rate percentage</li>
+                        <li>Packets per second rate</li>
+                        <li>Attack duration</li>
+                        <li>Error messages and warnings</li>
+                    </ul>
+
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> The GUI requires PyQt6 to be installed. If it's not available, you'll see an error message with installation instructions.
+                    </div>
+
+                    <h3>GUI Workflow</h3>
+                    <ol>
+                        <li><strong>Launch GUI:</strong> Run <code>sudo wifi-jammer --gui</code></li>
+                        <li><strong>Select Interface:</strong> Choose your wireless interface from the dropdown</li>
+                        <li><strong>Scan Networks:</strong> Click "Scan Networks" to discover available WiFi networks</li>
+                        <li><strong>Configure Attack:</strong> Switch to Attack Configuration tab and set up your attack</li>
+                        <li><strong>Monitor Progress:</strong> Use Progress Monitor tab to watch attack statistics in real-time</li>
+                    </ol>
+                </section>
+            </div>
+        </div>
+
+        <section>
+            <h2>Comparison: TUI vs GUI</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>TUI</th>
+                        <th>GUI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Platform Support</td>
+                        <td>All platforms with terminal</td>
+                        <td>Windows, macOS, Linux</td>
+                    </tr>
+                    <tr>
+                        <td>Resource Usage</td>
+                        <td>Low (text-based)</td>
+                        <td>Medium (graphical)</td>
+                    </tr>
+                    <tr>
+                        <td>Remote Access</td>
+                        <td>Excellent (SSH compatible)</td>
+                        <td>Limited (requires X11 forwarding)</td>
+                    </tr>
+                    <tr>
+                        <td>User Experience</td>
+                        <td>Keyboard-driven, fast</td>
+                        <td>Mouse-driven, intuitive</td>
+                    </tr>
+                    <tr>
+                        <td>Dependencies</td>
+                        <td>textual</td>
+                        <td>PyQt6</td>
+                    </tr>
+                    <tr>
+                        <td>Best For</td>
+                        <td>Terminal users, remote access</td>
+                        <td>Desktop users, visual learners</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Getting Started</h2>
+            <p>Ready to try WiFi Jammer? Here's how to get started:</p>
+            <ol>
+                <li>Install WiFi Jammer following the <a href="usage.html#installation">installation guide</a></li>
+                <li>Choose your preferred interface (TUI or GUI)</li>
+                <li>Launch with appropriate command (see above)</li>
+                <li>Scan for networks and select a target</li>
+                <li>Configure and launch your attack</li>
+            </ol>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ Legal Reminder:</strong> Only use WiFi Jammer on networks you own or have explicit permission to test. Unauthorized access to networks is illegal.
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/oyi77/wifi-jammer" target="_blank">GitHub Repository</a>
+            <a href="https://github.com/oyi77/wifi-jammer/issues" target="_blank">Report Issues</a>
+            <a href="LICENSE" target="_blank">License (MIT)</a>
+        </div>
+        <p>&copy; 2024 WiFi Jammer Tool. Built by Paijo.</p>
+    </footer>
+
+    <button class="scroll-to-top" aria-label="Scroll to top">↑</button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
+

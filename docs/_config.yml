@@ -1,0 +1,22 @@
+# GitHub Pages Configuration
+# This file is optional but helps with GitHub Pages setup
+
+title: WiFi Jammer
+description: Advanced WiFi jamming tool built with Python, following SOLID principles
+url: https://oyi77.github.io
+baseurl: /wifi-jammer
+
+# Theme settings (if using Jekyll, but we're using static HTML)
+# theme: minima
+
+# Exclude files from processing
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+

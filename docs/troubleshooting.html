@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Troubleshooting guide for WiFi Jammer - solutions to common issues and platform-specific problems.">
+    <title>Troubleshooting - WiFi Jammer</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo">WiFi Jammer</a>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="usage.html">Usage</a></li>
+                <li><a href="demo.html">Demo</a></li>
+                <li><a href="troubleshooting.html">Troubleshooting</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="breadcrumbs">
+            <a href="index.html">Home</a> / Troubleshooting
+        </div>
+
+        <section>
+            <h1>Troubleshooting Guide</h1>
+            <p>Find solutions to common issues and platform-specific problems with WiFi Jammer.</p>
+        </section>
+
+        <section>
+            <h2>Common Issues</h2>
+
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>"No wireless interfaces found"</h3>
+                    <span class="expandable-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <h4>Possible Causes:</h4>
+                    <ul>
+                        <li>Your wireless card doesn't support monitor mode</li>
+                        <li>Wireless interface is not available or disabled</li>
+                        <li>Driver issues with your wireless adapter</li>
+                    </ul>
+                    <h4>Solutions:</h4>
+                    <ol>
+                        <li><strong>Check available interfaces:</strong>
+                            <pre><code># Linux
+iwconfig
+ifconfig
+
+# macOS
+ifconfig
+networksetup -listallhardwareports
+
+# Windows
+ipconfig /all</code></pre>
+                        </li>
+                        <li><strong>Verify monitor mode support:</strong>
+                            <pre><code># Linux - check if your card supports monitor mode
+iw phy | grep -A 10 "Supported interface modes"</code></pre>
+                        </li>
+                        <li><strong>Enable wireless interface:</strong>
+                            <pre><code># Linux
+sudo ifconfig wlan0 up
+
+# macOS
+sudo ifconfig en0 up</code></pre>
+                        </li>
+                        <li><strong>Check driver compatibility:</strong> Some wireless adapters have limited or no monitor mode support. Research your specific adapter model.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>"Permission denied" errors</h3>
+                    <span class="expandable-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <h4>Possible Causes:</h4>
+                    <ul>
+                        <li>Not running with root/administrator privileges</li>
+                        <li>Insufficient permissions for wireless interface access</li>
+                        <li>macOS System Integrity Protection (SIP) restrictions</li>
+                    </ul>
+                    <h4>Solutions:</h4>
+                    <ol>
+                        <li><strong>Run with sudo (Linux/macOS):</strong>
+                            <pre><code>sudo wifi-jammer attack --tui
+sudo wifi-jammer --gui</code></pre>
+                        </li>
+                        <li><strong>Run as Administrator (Windows):</strong>
+                            <pre><code># Right-click PowerShell/CMD and select "Run as Administrator"
+wifi-jammer attack</code></pre>
+                        </li>
+                        <li><strong>Check user permissions (Linux):</strong>
+                            <pre><code># Add user to netdev group (Debian/Ubuntu)
+sudo usermod -aG netdev $USER
+# Log out and back in for changes to take effect</code></pre>
+                        </li>
+                        <li><strong>macOS Location Services:</strong> See the macOS-specific section below.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>"Interface not found"</h3>
+                    <span class="expandable-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <h4>Possible Causes:</h4>
+                    <ul>
+                        <li>Interface name is incorrect</li>
+                        <li>Interface name differs between systems</li>
+                        <li>Interface is disabled or not available</li>
+                    </ul>
+                    <h4>Solutions:</h4>
+                    <ol>
+                        <li><strong>List all interfaces:</strong>
+                            <pre><code># Linux
+iwconfig
+ip link show
+
+# macOS
+ifconfig | grep "^[a-z]"
+networksetup -listallhardwareports
+
+# Windows
+ipconfig /all</code></pre>
+                        </li>
+                        <li><strong>Common interface names:</strong>
+                            <ul>
+                                <li>Linux: <code>wlan0</code>, <code>wlp2s0</code>, <code>wlan1</code></li>
+                                <li>macOS: <code>en0</code>, <code>en1</code> (usually en0 for WiFi)</li>
+                                <li>Windows: <code>Wi-Fi</code>, <code>Wireless Network Connection</code></li>
+                            </ul>
+                        </li>
+                        <li><strong>Use interface discovery:</strong> Let the tool automatically detect interfaces:
+                            <pre><code>wifi-jammer scan  # Will show available interfaces</code></pre>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>macOS: "SSID/BSSID are None" or networks show as "&lt;redacted&gt;"</h3>
+                    <span class="expandable-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <h4>Cause:</h4>
+                    <p>macOS requires Location Services permission to access WiFi network information for privacy reasons.</p>
+                    <h4>Solutions:</h4>
+                    <div class="alert alert-warning">
+                        <strong>Quick Fix:</strong> Run <code>bash install.sh</code> or <code>bash quick_install.sh</code> - they automatically run setup and request permission.
+                    </div>
+                    <h4>Manual Fix:</h4>
+                    <ol>
+                        <li>Open <strong>System Settings</strong> (or System Preferences on older macOS)</li>
+                        <li>Go to <strong>Privacy & Security</strong> → <strong>Location Services</strong></li>
+                        <li>Enable <strong>Location Services</strong> (toggle ON)</li>
+                        <li>Find <strong>"Python"</strong> or <strong>"python3"</strong> in the list</li>
+                        <li>Check the box ✅ to allow location access</li>
+                        <li>Restart the WiFi Jammer tool</li>
+                    </ol>
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> The tool automatically detects which Python has permission and uses it. You may need to grant permission to multiple Python installations if you have several.
+                    </div>
+                </div>
+            </div>
+
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>Monitor mode problems</h3>
+                    <span class="expandable-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <h4>Possible Causes:</h4>
+                    <ul>
+                        <li>Wireless card doesn't support monitor mode</li>
+                        <li>Driver doesn't support monitor mode</li>
+                        <li>Interface is already in use</li>
+                        <li>macOS limitations with monitor mode</li>
+                    </ul>
+                    <h4>Solutions:</h4>
+                    <ol>
+                        <li><strong>Check monitor mode support (Linux):</strong>
+                            <pre><code>iw phy | grep -A 10 "Supported interface modes"</code></pre>
+                        </li>
+                        <li><strong>Put interface in monitor mode manually (Linux):</strong>
+                            <pre><code>sudo ifconfig wlan0 down
+sudo iwconfig wlan0 mode monitor
+sudo ifconfig wlan0 up</code></pre>
+                        </li>
+                        <li><strong>macOS:</strong> Monitor mode on macOS is limited. The tool uses alternative methods, but some features may not work as expected.</li>
+                        <li><strong>Check if interface is in use:</strong>
+                            <pre><code># Linux
+sudo lsof | grep wlan0
+# Kill processes using the interface if necessary</code></pre>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="expandable">
+                <div class="expandable-header">
+                    <h3>Attacks not working / No packets sent</h3>
+                    <span class="expandable-icon">▼</span>
+                </div>
+                <div class="expandable-content">
+                    <h4>Possible Causes:</h4>
+                    <ul>
+                        <li>Interface not in monitor mode</li>
+                        <li>Wrong channel selected</li>
+                        <li>Target BSSID incorrect</li>
+                        <li>Firewall blocking packets</li>
+                        <li>Driver issues</li>
+                    </ul>
+                    <h4>Solutions:</h4>
+                    <ol>
+                        <li><strong>Enable verbose mode:</strong>
+                            <pre><code>sudo wifi-jammer --verbose attack --interface en0 --target 00:11:22:33:44:55 --attack deauth</code></pre>
+                        </li>
+                        <li><strong>Verify target BSSID:</strong> Make sure the BSSID format is correct (XX:XX:XX:XX:XX:XX)</li>
+                        <li><strong>Check channel:</strong> Ensure you're on the same channel as the target network</li>
+                        <li><strong>Test with scan first:</strong>
+                            <pre><code>sudo wifi-jammer scan --interface en0</code></pre>
+                        </li>
+                        <li><strong>Check firewall:</strong> Temporarily disable firewall to test</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Platform-Specific Troubleshooting</h2>
+
+            <h3>macOS</h3>
+            <div class="alert alert-info">
+                <strong>macOS Support:</strong> Enhanced support for macOS including M1/M2/M3 ARM chips.
+            </div>
+
+            <h4>Common macOS Issues:</h4>
+            <ul>
+                <li><strong>Location Services:</strong> Required for network scanning. See above for fix.</li>
+                <li><strong>Monitor Mode:</strong> Limited support on macOS. Some features may not work.</li>
+                <li><strong>Python Permissions:</strong> Multiple Python installations may need separate permissions.</li>
+                <li><strong>System Integrity Protection:</strong> May restrict some operations even with sudo.</li>
+            </ul>
+
+            <h4>macOS Setup Script:</h4>
+            <p>Use the automated setup script for macOS:</p>
+            <pre><code>bash tools/setup_macos.py
+# or
+bash install.sh</code></pre>
+
+            <h3>Linux</h3>
+            <h4>Common Linux Issues:</h4>
+            <ul>
+                <li><strong>Driver Support:</strong> Some wireless drivers don't support monitor mode well</li>
+                <li><strong>NetworkManager:</strong> May interfere with monitor mode. Try disabling it temporarily</li>
+                <li><strong>Permissions:</strong> May need to add user to netdev group</li>
+            </ul>
+
+            <h4>Linux Setup Tips:</h4>
+            <pre><code># Disable NetworkManager for the interface (temporarily)
+sudo nmcli device set wlan0 managed no
+
+# Put interface in monitor mode
+sudo ifconfig wlan0 down
+sudo iwconfig wlan0 mode monitor
+sudo ifconfig wlan0 up
+
+# Re-enable NetworkManager when done
+sudo nmcli device set wlan0 managed yes</code></pre>
+
+            <h3>Windows</h3>
+            <div class="alert alert-warning">
+                <strong>Windows Limitations:</strong> Windows has limited functionality due to driver and API restrictions. Some features may not work.
+            </div>
+
+            <h4>Windows Requirements:</h4>
+            <ul>
+                <li>Administrator privileges required</li>
+                <li>Compatible wireless adapter with monitor mode support</li>
+                <li>May require additional drivers (e.g., WinPcap, Npcap)</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Debug Mode</h2>
+            <p>Enable verbose output to see detailed information about what's happening:</p>
+            <pre><code>sudo wifi-jammer --verbose attack --interface en0 --target 00:11:22:33:44:55 --attack deauth</code></pre>
+
+            <h3>Diagnostic Tools</h3>
+            <p>Use the built-in diagnostic tool to check your environment:</p>
+            <pre><code># Check root access and Scapy installation
+python3 tools/check_root.py
+
+# Or with sudo to test root access
+sudo python3 tools/check_root.py</code></pre>
+
+            <p>The diagnostic tool checks:</p>
+            <ul class="feature-list">
+                <li>Root/admin privileges (EUID on Unix, Admin on Windows)</li>
+                <li>Scapy installation and functionality</li>
+                <li>Network interface availability</li>
+                <li>macOS-specific: /dev/bpf* device access</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Getting Help</h2>
+            <p>If you're still experiencing issues:</p>
+
+            <h3>1. Check Existing Issues</h3>
+            <p>Search the GitHub issues page for similar problems:</p>
+            <p><a href="https://github.com/oyi77/wifi-jammer/issues" target="_blank" class="btn btn-primary">View Issues on GitHub</a></p>
+
+            <h3>2. Create a New Issue</h3>
+            <p>When creating a new issue, please include:</p>
+            <ul>
+                <li>Operating system and version</li>
+                <li>Python version (<code>python3 --version</code>)</li>
+                <li>Wireless interface name and type</li>
+                <li>Full error message</li>
+                <li>Steps to reproduce</li>
+                <li>Output from <code>tools/check_root.py</code></li>
+            </ul>
+
+            <h3>3. Community Support</h3>
+            <p>Join discussions and get help from the community:</p>
+            <ul>
+                <li><a href="https://github.com/oyi77/wifi-jammer/discussions" target="_blank">GitHub Discussions</a></li>
+                <li>Check the <a href="usage.html">Usage Guide</a> for detailed instructions</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Prevention Tips</h2>
+            <p>To avoid common issues:</p>
+            <ul class="feature-list">
+                <li>Always run with <code>sudo</code> (Linux/macOS) or as Administrator (Windows)</li>
+                <li>Grant Location Services permission on macOS before first use</li>
+                <li>Use the automated installation scripts when possible</li>
+                <li>Verify your wireless adapter supports monitor mode before use</li>
+                <li>Keep Python and dependencies up to date</li>
+                <li>Check interface names with <code>ifconfig</code> or <code>iwconfig</code> before specifying them</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/oyi77/wifi-jammer" target="_blank">GitHub Repository</a>
+            <a href="https://github.com/oyi77/wifi-jammer/issues" target="_blank">Report Issues</a>
+            <a href="LICENSE" target="_blank">License (MIT)</a>
+        </div>
+        <p>&copy; 2024 WiFi Jammer Tool. Built by Paijo.</p>
+    </footer>
+
+    <button class="scroll-to-top" aria-label="Scroll to top">↑</button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
+
