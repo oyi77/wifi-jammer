@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 from setuptools import setup, find_packages
+import platform
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+
+# Add macOS-specific dependencies
+if platform.system() == "Darwin":
+    requirements.append("pyobjc-framework-CoreWLAN>=10.0")
 
 setup(
     name="wifi-jammer",
@@ -43,6 +48,7 @@ setup(
     entry_points={
         "console_scripts": [
             "wifi-jammer=wifi_jammer.cli:main",
+            "wifi-jammer-gui=wifi_jammer.gui:launch_gui",
         ],
     },
     include_package_data=True,

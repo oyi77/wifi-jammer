@@ -1,0 +1,7 @@
+# Optional dependencies for enhanced macOS support
+# Install with: pip install -r requirements-optional.txt
+
+# CoreWLAN framework support for macOS (better WiFi network access)
+# Requires: macOS with proper Location Services permissions
+pyobjc-framework-CoreWLAN>=10.0
+

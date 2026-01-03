@@ -6,3 +6,5 @@ rich
 click
 pyyaml
 cryptography>=45.0.6
+textual
+PyQt6>=6.6.0
