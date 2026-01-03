@@ -148,4 +148,5 @@ Thumbs.db
 *.log
 logs/
 temp/
-tmp/ 
+tmp/
+.python_with_permission 
