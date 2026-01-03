@@ -3,8 +3,8 @@ Attack factory implementation.
 """
 
 from typing import Dict, Type
-from ..core.interfaces import IAttackFactory, IAttackStrategy, AttackType
-from ..attacks import (
+from wifi_jammer.core.interfaces import IAttackFactory, IAttackStrategy, AttackType
+from wifi_jammer.attacks import (
     DeauthAttack, DisassocAttack, BeaconFloodAttack,
     AuthFloodAttack, AssocFloodAttack, ProbeResponseFloodAttack
 )
@@ -23,13 +23,13 @@ class AttackFactory(IAttackFactory):
             AttackType.PROBE_RESPONSE: ProbeResponseFloodAttack,
         }
     
-    def create_attack(self, attack_type: AttackType) -> IAttackStrategy:
+    def create_attack(self, attack_type: AttackType, logger=None) -> IAttackStrategy:
         """Create an attack strategy instance."""
         if attack_type not in self._attack_classes:
             raise ValueError(f"Unknown attack type: {attack_type}")
         
         attack_class = self._attack_classes[attack_type]
-        return attack_class()
+        return attack_class(logger=logger)
     
     def get_available_attacks(self) -> list:
         """Get list of available attack types."""

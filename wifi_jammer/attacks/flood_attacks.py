@@ -5,7 +5,7 @@ Flood attack implementations.
 import random
 from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, Dot11Auth, Dot11AssoReq, Dot11ProbeResp
-from .base_attack import BaseAttack
+from wifi_jammer.attacks.base_attack import BaseAttack
 
 
 class BeaconFloodAttack(BaseAttack):

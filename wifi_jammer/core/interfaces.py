@@ -27,7 +27,12 @@ class NetworkInfo:
     channel: int
     rssi: int
     encryption: str
-    clients: List[str] = None
+    clients: Optional[List[str]] = None
+    
+    def __post_init__(self):
+        """Initialize clients list if None."""
+        if self.clients is None:
+            self.clients = []
 
 
 @dataclass
@@ -41,6 +46,7 @@ class AttackConfig:
     channel: int = 0
     count: int = 0
     delay: float = 0.1
+    target_client: str = ""
     verbose: bool = False
 
 
@@ -55,6 +61,21 @@ class INetworkScanner(ABC):
     @abstractmethod
     def get_interface_list(self) -> List[str]:
         """Get list of available interfaces."""
+        pass
+    
+    @abstractmethod
+    def scan_clients(self, interface: str, ap_bssid: str, channel: Optional[int] = None, duration: int = 30) -> Dict[str, float]:
+        """Scan for clients connected to a specific access point.
+        
+        Args:
+            interface: Network interface to use
+            ap_bssid: BSSID of the access point
+            channel: Channel to scan on (optional)
+            duration: Duration of scan in seconds
+            
+        Returns:
+            Dictionary mapping client MAC addresses to last seen timestamps
+        """
         pass
 
 
