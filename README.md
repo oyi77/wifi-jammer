@@ -106,18 +106,6 @@ sudo wifi-jammer attack --tui
 sudo wifi-jammer attack --interface en0 --target 00:11:22:33:44:55 --attack deauth
 ```
 
-**Option 3: Using Python module directly:**
-```bash
-# Scan networks
-python3 -m wifi_jammer.cli scan
-
-# Launch TUI
-sudo python3 -m wifi_jammer.cli attack --tui
-
-# Direct attack
-sudo python3 -m wifi_jammer.cli attack --interface en0 --target 00:11:22:33:44:55 --attack deauth
-```
-
 ### Command-line Options:
 ```bash
 # Direct attack with options
@@ -181,16 +169,6 @@ sudo python3 tools/netcut.py
 - **colorama**: Cross-platform colored output
 - **PyQt6**: Cross-platform GUI framework (for GUI mode)
 
-### macOS-Specific Dependencies
-
-On macOS, the tool automatically installs:
-- **pyobjc-framework-CoreWLAN**: Better WiFi network access (auto-installed on first run)
-
-This is automatically installed when you run the tool on macOS, or you can install it manually:
-```bash
-pip install pyobjc-framework-CoreWLAN
-```
-
 ## ⚠️ Legal Notice
 
 **This tool is for educational purposes only!**
@@ -253,8 +231,7 @@ MIT License - see LICENSE file for details.
 
 ## 👨‍💻 Author
 
-**Paijo** - Advanced WiFi jamming tool with SOLID principles
-
+**Paijo**
 ---
 
 **Remember**: With great power comes great responsibility. Use this tool ethically and legally!
