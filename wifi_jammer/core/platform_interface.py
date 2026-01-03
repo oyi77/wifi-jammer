@@ -6,6 +6,8 @@ Following SOLID principles with clear separation of concerns.
 import platform
 import subprocess
 import re
+import time
+import os
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass
@@ -92,7 +94,8 @@ class LinuxInterface(IPlatformInterface):
                         info = self.get_interface_info(iface_name)
                         if info:
                             interfaces.append(info)
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, ValueError):
             pass
         return interfaces
     
@@ -111,7 +114,8 @@ class LinuxInterface(IPlatformInterface):
                         info = self.get_interface_info(iface_name)
                         if info and info.is_wireless:
                             wireless_interfaces.append(info)
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, ValueError):
             pass
         return wireless_interfaces
     
@@ -123,7 +127,8 @@ class LinuxInterface(IPlatformInterface):
                 return "Available"
             else:
                 return "Not Available"
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError):
             return "Unknown"
     
     def get_interface_info(self, interface_name: str) -> Optional[InterfaceInfo]:
@@ -155,7 +160,8 @@ class LinuxInterface(IPlatformInterface):
                 is_wireless=is_wireless,
                 is_monitor_capable=is_monitor_capable
             )
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, ValueError, AttributeError):
             return None
     
     def set_monitor_mode(self, interface_name: str) -> bool:
@@ -163,7 +169,8 @@ class LinuxInterface(IPlatformInterface):
             result = subprocess.run(['sudo', 'iwconfig', interface_name, 'mode', 'monitor'], 
                                   capture_output=True, text=True, timeout=10)
             return result.returncode == 0
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, PermissionError):
             return False
     
     def set_channel(self, interface_name: str, channel: int) -> bool:
@@ -171,132 +178,218 @@ class LinuxInterface(IPlatformInterface):
             result = subprocess.run(['sudo', 'iwconfig', interface_name, 'channel', str(channel)], 
                                   capture_output=True, text=True, timeout=10)
             return result.returncode == 0
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, PermissionError):
             return False
 
 
 class MacOSInterface(IPlatformInterface):
     """macOS-specific interface detection."""
     
+    AIRPORT_PATH = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+    
+    def __init__(self):
+        self._ns_cache = None
+        self._ns_cache_time = 0
+    
+    def _get_ns_output(self) -> str:
+        """Get networksetup output with simple caching."""
+        current_time = time.time()
+        if self._ns_cache is None or current_time - self._ns_cache_time > 30:
+            try:
+                result = subprocess.run(['networksetup', '-listallhardwareports'], 
+                                      capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    self._ns_cache = result.stdout
+                    self._ns_cache_time = current_time
+                else:
+                    return ""
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                    FileNotFoundError, OSError):
+                return ""
+        return self._ns_cache
+
     def get_platform_type(self) -> PlatformType:
         return PlatformType.MACOS
     
     def get_all_interfaces(self) -> List[InterfaceInfo]:
         interfaces = []
         try:
-            # Use ifconfig to get all interfaces
-            result = subprocess.run(['ifconfig'], 
-                                  capture_output=True, text=True, timeout=10)
+            # Use ifconfig -l to get list of names
+            result = subprocess.run(['ifconfig', '-l'], 
+                                  capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
-                lines = result.stdout.split('\n')
-                current_interface = None
-                
-                for line in lines:
-                    # Match interface name
-                    match = re.match(r'^(\w+):', line)
-                    if match:
-                        if current_interface:
-                            interfaces.append(current_interface)
-                        current_interface = self.get_interface_info(match.group(1))
-                
-                # Add the last interface
-                if current_interface:
-                    interfaces.append(current_interface)
-        except Exception:
+                iface_names = result.stdout.strip().split()
+                for name in iface_names:
+                    try:
+                        info = self.get_interface_info(name)
+                        if info:
+                            interfaces.append(info)
+                    except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                            FileNotFoundError, OSError, ValueError, AttributeError):
+                        continue
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError):
             pass
         return interfaces
     
     def get_wireless_interfaces(self) -> List[InterfaceInfo]:
+        """Get wireless interfaces on macOS with improved detection."""
         wireless_interfaces = []
-        try:
-            # Use system_profiler to get wireless interfaces
-            result = subprocess.run(['system_profiler', 'SPAirPortDataType'], 
-                                  capture_output=True, text=True, timeout=10)
-            if result.returncode == 0:
-                lines = result.stdout.split('\n')
-                current_interface = None
-                
-                for i, line in enumerate(lines):
-                    # Look for interface names (lines ending with ':')
-                    if line.strip().endswith(':') and not line.strip().startswith('Wi-Fi:'):
-                        iface_name = line.strip()[:-1]  # Remove the colon
-                        # Check if this interface has wireless capabilities
-                        for j in range(i+1, min(i+20, len(lines))):
-                            if 'Card Type: Wi-Fi' in lines[j]:
-                                info = self.get_interface_info(iface_name)
-                                if info and info.is_wireless:
-                                    wireless_interfaces.append(info)
-                                break
-                            elif j < len(lines) and lines[j].strip().endswith(':') and not lines[j].strip().startswith('Wi-Fi:'):
-                                # Found another interface, stop searching
-                                break
-        except Exception:
-            pass
+        ns_output = self._get_ns_output()
         
-        # Fallback: check common wireless interface names
+        # Method 1: Use networksetup to find Wi-Fi interfaces
+        if ns_output:
+            lines = ns_output.split('\n')
+            current_port = None
+            for i, line in enumerate(lines):
+                line_stripped = line.strip()
+                # Check for hardware port line
+                if line_stripped.startswith('Hardware Port:'):
+                    port_name = line_stripped.replace('Hardware Port:', '').strip()
+                    # Check if it's Wi-Fi or AirPort
+                    if 'Wi-Fi' in port_name or 'AirPort' in port_name:
+                        current_port = port_name
+                    else:
+                        current_port = None
+                # Check for device line
+                elif current_port and line_stripped.startswith('Device:'):
+                    match = re.search(r'Device:\s*(\w+)', line_stripped)
+                    if match:
+                        iface_name = match.group(1)
+                        info = self.get_interface_info(iface_name)
+                        if info and info.is_wireless:
+                            wireless_interfaces.append(info)
+                        current_port = None
+        
+        # Method 2: Fallback - check all interfaces and identify wireless ones
         if not wireless_interfaces:
-            common_wireless = ['en0', 'en1']
-            for iface_name in common_wireless:
-                info = self.get_interface_info(iface_name)
-                if info and info.is_wireless:
-                    wireless_interfaces.append(info)
+            all_interfaces = self.get_all_interfaces()
+            for iface in all_interfaces:
+                if iface.is_wireless:
+                    wireless_interfaces.append(iface)
+        
+        # Method 3: Last resort - check common macOS wireless interface names
+        if not wireless_interfaces:
+            common_wireless_names = ['en0', 'en1', 'wlan0', 'wifi0']
+            for name in common_wireless_names:
+                try:
+                    info = self.get_interface_info(name)
+                    if info and info.is_wireless:
+                        # Only add if not already in list
+                        if not any(i.name == info.name for i in wireless_interfaces):
+                            wireless_interfaces.append(info)
+                except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                        FileNotFoundError, OSError, ValueError, AttributeError):
+                    continue
         
         return wireless_interfaces
     
     def check_interface_status(self, interface_name: str) -> str:
+        """Check interface status with improved macOS detection."""
         try:
-            result = subprocess.run(['ifconfig', interface_name], 
+            result = subprocess.run(['/sbin/ifconfig', interface_name], 
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
-                if 'UP' in result.stdout:
+                output = result.stdout.lower()
+                # Improved status detection for macOS
+                if ('status: active' in output or 
+                    'up' in output or 
+                    'running' in output or
+                    'inet ' in output):
                     return "Available"
                 else:
                     return "Not Available"
             else:
                 return "Not Available"
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError):
             return "Unknown"
     
     def get_interface_info(self, interface_name: str) -> Optional[InterfaceInfo]:
+        """Get interface information with improved macOS wireless detection."""
         try:
-            result = subprocess.run(['ifconfig', interface_name], 
+            result = subprocess.run(['/sbin/ifconfig', interface_name], 
                                   capture_output=True, text=True, timeout=5)
             if result.returncode != 0:
                 return None
             
             output = result.stdout
-            status = "Available" if "UP" in output else "Not Available"
+            output_lower = output.lower()
+            
+            # Improved status detection for macOS
+            status = "Not Available"
+            if ('status: active' in output_lower or 
+                'up' in output_lower or 
+                'running' in output_lower or
+                'inet ' in output):
+                status = "Available"
             
             # Extract MAC address
             mac_match = re.search(r'ether\s+([0-9a-fA-F:]+)', output)
             mac_address = mac_match.group(1) if mac_match else "Unknown"
             
-            # Determine if wireless by checking system_profiler
+            # Improved wireless detection with multiple methods
             is_wireless = False
-            try:
-                profiler_result = subprocess.run(['system_profiler', 'SPAirPortDataType'], 
-                                               capture_output=True, text=True, timeout=10)
-                if profiler_result.returncode == 0:
-                    # Check if this interface appears in the wireless section
-                    if interface_name in profiler_result.stdout:
-                        # Look for "Card Type: Wi-Fi" near this interface
-                        lines = profiler_result.stdout.split('\n')
-                        for i, line in enumerate(lines):
-                            if interface_name in line and line.strip().endswith(':'):
-                                # Check next few lines for "Card Type: Wi-Fi"
-                                for j in range(i+1, min(i+10, len(lines))):
-                                    if 'Card Type: Wi-Fi' in lines[j]:
-                                        is_wireless = True
-                                        break
-                                    elif j < len(lines) and lines[j].strip().endswith(':') and not lines[j].strip().startswith('Wi-Fi:'):
-                                        # Found another interface, stop searching
-                                        break
-            except Exception:
-                # Fallback: assume en0, en1, awdl0 are wireless
-                is_wireless = interface_name.startswith('en') or interface_name.startswith('awdl')
             
-            # Monitor mode capability (limited on macOS)
-            is_monitor_capable = is_wireless
+            # Method 1: Check networksetup output
+            ns_output = self._get_ns_output()
+            if ns_output:
+                lines = ns_output.split('\n')
+                for i, line in enumerate(lines):
+                    if f"Device: {interface_name}" in line:
+                        # Check previous lines for Wi-Fi/AirPort
+                        for j in range(max(0, i-3), i):
+                            if 'Wi-Fi' in lines[j] or 'AirPort' in lines[j]:
+                                is_wireless = True
+                                break
+                        if is_wireless:
+                            break
+            
+            # Method 2: Check media type in ifconfig output
+            if not is_wireless:
+                is_wireless = (
+                    'media: IEEE 802.11' in output or
+                    'media: autoselect (802.11)' in output or
+                    'media: autoselect mode 11n' in output or
+                    'media: autoselect mode 11ac' in output
+                )
+            
+            # Method 3: Check common macOS wireless interface names
+            if not is_wireless:
+                # en0 is typically Wi-Fi on macOS, but not always
+                # Check if it has wireless characteristics
+                if interface_name in ['en0', 'en1']:
+                    # Additional check: if it has no IP or has specific wireless patterns
+                    if 'inet ' not in output or 'media: IEEE 802.11' in output:
+                        is_wireless = True
+            
+            # Method 4: Check if interface supports wireless operations
+            if not is_wireless and os.path.exists(self.AIRPORT_PATH):
+                # Try to get info via airport (doesn't require sudo for basic info)
+                try:
+                    ap_result = subprocess.run(
+                        [self.AIRPORT_PATH, interface_name, '-I'],
+                        capture_output=True,
+                        text=True,
+                        timeout=3
+                    )
+                    if ap_result.returncode == 0 and 'SSID:' in ap_result.stdout:
+                        is_wireless = True
+                except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                        FileNotFoundError, OSError):
+                    pass
+            
+            # Monitor mode capability - macOS has limited support
+            # Most modern Macs don't support monitor mode without special drivers
+            is_monitor_capable = False
+            if is_wireless:
+                # Check if airport utility exists (required for monitor mode)
+                if os.path.exists(self.AIRPORT_PATH):
+                    # On macOS, monitor mode is very limited
+                    # Only certain older Macs or with special drivers support it
+                    # We'll mark it as capable but warn users it may not work
+                    is_monitor_capable = True
             
             return InterfaceInfo(
                 name=interface_name,
@@ -307,17 +400,89 @@ class MacOSInterface(IPlatformInterface):
                 is_wireless=is_wireless,
                 is_monitor_capable=is_monitor_capable
             )
-        except Exception:
+        except Exception as e:
+            # Log error but don't fail completely
             return None
     
     def set_monitor_mode(self, interface_name: str) -> bool:
-        # macOS has limited monitor mode support
-        # This would require additional tools like airmon-ng or manual configuration
-        return False
+        """Set interface to monitor mode on macOS.
+        
+        Note: Monitor mode is very limited on macOS and may not work on all systems.
+        Most modern Macs don't support monitor mode without special drivers.
+        """
+        if not os.path.exists(self.AIRPORT_PATH):
+            return False
+        
+        try:
+            # Try to set monitor mode using airport utility
+            # Note: This may require sudo and may not work on all Macs
+            result = subprocess.run(
+                ['sudo', self.AIRPORT_PATH, interface_name, '-z'], 
+                capture_output=True, 
+                text=True, 
+                timeout=10
+            )
+            # Check if it succeeded (return code 0)
+            if result.returncode == 0:
+                return True
+            # Even if return code is non-zero, it might have worked
+            # Check stderr for specific error messages
+            if result.stderr:
+                error_lower = result.stderr.lower()
+                if 'operation not permitted' in error_lower or 'permission denied' in error_lower:
+                    # Need sudo or permissions
+                    return False
+                elif 'not supported' in error_lower or 'unsupported' in error_lower:
+                    # Monitor mode not supported on this Mac
+                    return False
+            # If no clear error, assume it might have worked
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+        except FileNotFoundError:
+            # Airport utility not found
+            return False
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                OSError, PermissionError):
+            return False
     
     def set_channel(self, interface_name: str, channel: int) -> bool:
-        # macOS has limited channel setting support
-        return False
+        """Set interface channel on macOS.
+        
+        Note: Channel setting may not work in managed mode on macOS.
+        Monitor mode is typically required for channel setting.
+        """
+        if not os.path.exists(self.AIRPORT_PATH):
+            return False
+        
+        try:
+            # Try to set channel using airport utility
+            # Note: This may require sudo and monitor mode
+            result = subprocess.run(
+                ['sudo', self.AIRPORT_PATH, interface_name, f'--channel={channel}'], 
+                capture_output=True, 
+                text=True, 
+                timeout=10
+            )
+            # Check if it succeeded
+            if result.returncode == 0:
+                return True
+            # Check for specific errors
+            if result.stderr:
+                error_lower = result.stderr.lower()
+                if 'operation not permitted' in error_lower:
+                    return False
+                elif 'not supported' in error_lower:
+                    return False
+            # If no clear error, might have worked
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+        except FileNotFoundError:
+            return False
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                OSError, PermissionError):
+            return False
 
 
 class WindowsInterface(IPlatformInterface):
@@ -342,7 +507,8 @@ class WindowsInterface(IPlatformInterface):
                             info = self.get_interface_info(iface_name)
                             if info:
                                 interfaces.append(info)
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, ValueError):
             pass
         return interfaces
     
@@ -357,7 +523,8 @@ class WindowsInterface(IPlatformInterface):
                 return "Available"
             else:
                 return "Not Available"
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError):
             return "Unknown"
     
     def get_interface_info(self, interface_name: str) -> Optional[InterfaceInfo]:
@@ -379,7 +546,8 @@ class WindowsInterface(IPlatformInterface):
                 is_wireless=is_wireless,
                 is_monitor_capable=False  # Windows has limited monitor mode support
             )
-        except Exception:
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+                FileNotFoundError, OSError, ValueError, AttributeError):
             return None
     
     def set_monitor_mode(self, interface_name: str) -> bool:

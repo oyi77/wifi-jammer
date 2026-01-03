@@ -157,7 +157,7 @@ class ModernCrypto:
                 hashes.SHA256()
             )
             return True
-        except Exception:
+        except (ValueError, TypeError, AttributeError, OSError):
             return False
     
     @staticmethod
