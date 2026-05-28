@@ -7,7 +7,7 @@
 PYTHON = python3
 PIP = pip3
 PACKAGE_NAME = wifi-jammer
-VERSION = 1.0.0
+VERSION = 2.0.0
 
 # Colors for output
 RED = \033[0;31m
@@ -109,7 +109,7 @@ check: ## Check installation and dependencies
 
 build: ## Build distribution packages
 	@echo "$(BLUE)Building distribution packages...$(NC)"
-	$(PYTHON) setup.py sdist bdist_wheel
+	$(PYTHON) -m build
 	@echo "$(GREEN)Build complete!$(NC)"
 
 install-from-source: ## Install directly from source
@@ -176,3 +176,34 @@ docker-build: ## Build Docker image
 
 docker-run: ## Run in Docker (privileged, host network)
 	docker run --rm --net=host --privileged wifi-jammer
+
+# Release targets
+release: clean test build ## Run tests, build package
+	@echo "$(GREEN)Ready to release! Run: make publish$(NC)"
+
+publish: ## Publish to PyPI (requires credentials)
+	$(PYTHON) -m twine upload dist/*
+
+tag: ## Create git tag for release (usage: make tag V=2.0.0)
+	@if [ -z "$(V)" ]; then echo "$(RED)Usage: make tag V=x.y.z$(NC)"; exit 1; fi
+	@echo "$(BLUE)Tagging v$(V)...$(NC)"
+	sed -i "s/^version = .*/version = \"$(V)\"/" pyproject.toml
+	sed -i "s/VERSION = .*/VERSION = $(V)/" Makefile
+	git add pyproject.toml Makefile
+	git commit -m "bump: v$(V)"
+	git tag v$(V)
+	@echo "$(GREEN)Tagged v$(V). Push with: git push && git push --tags$(NC)"
+
+# Release
+release: clean test build ## Build and prepare release
+	@echo "$(GREEN)Release build ready in dist/$(NC)"
+	@echo "$(YELLOW)To publish: git tag v$(VERSION) && git push --tags$(NC)"
+
+bump: ## Bump version (usage: make bump V=2.1.0)
+	@if [ -z "$(V)" ]; then echo "$(RED)Usage: make bump V=x.y.z$(NC)"; exit 1; fi
+	@echo "$(BLUE)Bumping version to $(V)...$(NC)"
+	@sed -i 's/^version = .*/version = "$(V)"/' pyproject.toml
+	@sed -i 's/^    version=".*"/    version="$(V)"/' setup.py
+	@sed -i 's/^VERSION = .*/VERSION = $(V)/' Makefile
+	@echo "$(GREEN)Version bumped to $(V)$(NC)"
+	@echo "$(YELLOW)Run: git add -A && git commit -m 'bump: v$(V)' && git tag v$(V) && git push --tags$(NC)"
