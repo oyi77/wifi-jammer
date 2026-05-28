@@ -225,16 +225,17 @@ class TestWiFiJammerCLI(unittest.TestCase):
             self.assertEqual(config.count, 100)
             self.assertEqual(config.delay, 0.1)
     
-    @patch('platform.system', return_value="Linux")
-    def test_check_root_linux(self, mock_platform):
+    def test_check_root_linux(self):
         """Test root check on Linux."""
-        with patch('os.geteuid', return_value=0, create=True):
+        import wifi_jammer.utils.platform_utils as pu
+        with patch('wifi_jammer.utils.platform_utils.is_windows', return_value=False), \
+             patch('os.geteuid', return_value=0, create=True):
             result = self.cli.check_root()
             self.assertTrue(result)
 
-    @patch('platform.system', return_value="Linux")
-    def test_check_root_linux_not_root(self, mock_platform):
+    def test_check_root_linux_not_root(self):
         """Test root check on Linux when not root."""
-        with patch('os.geteuid', return_value=1000, create=True):
+        with patch('wifi_jammer.utils.platform_utils.is_windows', return_value=False), \
+             patch('os.geteuid', return_value=1000, create=True):
             result = self.cli.check_root()
             self.assertFalse(result)
