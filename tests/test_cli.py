@@ -200,8 +200,10 @@ class TestWiFiJammerCLI(unittest.TestCase):
     
     def test_select_attack(self):
         """Test attack selection."""
-        # Mock prompt to return deauth attack
-        with patch('wifi_jammer.cli.Prompt.ask', return_value="1"):
+        # Get index of DEAUTH in current factory ordering
+        attacks = self.cli.factory.get_available_attacks()
+        deauth_idx = attacks.index(AttackType.DEAUTH) + 1  # 1-indexed
+        with patch('wifi_jammer.cli.Prompt.ask', return_value=str(deauth_idx)):
             selected = self.cli.select_attack()
             self.assertEqual(selected, AttackType.DEAUTH)
     

@@ -179,14 +179,14 @@ class TestRootStatus(unittest.TestCase):
         self.assertTrue(require_root())  # True means needs root
     
     @patch('wifi_jammer.utils.platform_utils.is_windows', return_value=True)
-    @patch('ctypes.windll')
+    @patch('ctypes.windll', create=True)
     def test_require_root_windows_admin(self, mock_windll, mock_is_windows):
         """Test require_root on Windows with admin privileges."""
         mock_windll.shell32.IsUserAnAdmin.return_value = True
         self.assertFalse(require_root())
-    
+
     @patch('wifi_jammer.utils.platform_utils.is_windows', return_value=True)
-    @patch('ctypes.windll')
+    @patch('ctypes.windll', create=True)
     def test_require_root_windows_not_admin(self, mock_windll, mock_is_windows):
         """Test require_root on Windows without admin privileges."""
         mock_windll.shell32.IsUserAnAdmin.return_value = False

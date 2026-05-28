@@ -59,6 +59,55 @@ class ScanScreen(Screen):
         )
         yield Footer()
 
+class AttackConfigScreen(Screen):
+    """Screen for configuring attack parameters."""
+
+    def __init__(self, target: NetworkInfo):
+        super().__init__()
+        self.target = target
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Container(
+            Label(f"[bold]Configure Attack for {self.target.ssid or 'Hidden'}[/bold]", id="config_title"),
+            Label(f"BSSID: {self.target.bssid} | Channel: {self.target.channel} | RSSI: {self.target.rssi} dBm"),
+            Label("Attack Type:"),
+            DataTable(id="attack_type_table"),
+            Label("Delay (seconds):"),
+            Input(value="0.1", id="delay_input", placeholder="0.1"),
+            Label("Packet Count (0=unlimited):"),
+            Input(value="0", id="count_input", placeholder="0"),
+            Label("Target Client (empty=broadcast):"),
+            Input(value="", id="client_input", placeholder="ff:ff:ff:ff:ff:ff"),
+            Horizontal(
+                Button("Start Attack", variant="error", id="start_attack_btn"),
+                Button("Cancel", variant="default", id="cancel_config_btn"),
+                classes="button_row"
+            ),
+            id="config_container"
+        )
+        yield Footer()
+
+    def on_mount(self) -> None:
+        table = self.query_one("#attack_type_table", DataTable)
+        table.cursor_type = "row"
+        table.add_columns("Type", "Description")
+        for atype in AttackType:
+            desc = {
+                AttackType.DEAUTH: "Kick all clients from AP",
+                AttackType.DISASSOC: "Disassociate clients from AP",
+                AttackType.BEACON_FLOOD: "Flood area with fake APs",
+                AttackType.AUTH_FLOOD: "Flood AP with auth requests",
+                AttackType.ASSOC_FLOOD: "Flood AP with association requests",
+                AttackType.PROBE_RESPONSE: "Respond to all probes with fake APs",
+                AttackType.CHANNEL_HOP: "Deauth across multiple channels",
+                AttackType.PMKID_CAPTURE: "Capture PMKID for offline cracking",
+                AttackType.EVIL_TWIN: "Spoof AP and deauth real one",
+                AttackType.NETCUT: "Kick specific clients selectively",
+            }.get(atype, "")
+            table.add_row(atype.value, desc, key=atype.value)
+
+
 class AttackScreen(Screen):
     """Screen for monitoring the attack."""
     
@@ -222,6 +271,10 @@ class WiFiJammerApp(App):
             except Exception as e:
                 # If table not found, show helpful message
                 self.update_scan_status(f"[red]Error: Could not find network table. {e}[/red]")
+        elif event.button.id == "start_attack_btn":
+            self._start_attack_from_config()
+        elif event.button.id == "cancel_config_btn":
+            self.pop_screen()
         elif event.button.id == "stop_attack":
             if self.current_attack:
                 self.current_attack.stop()
@@ -373,18 +426,43 @@ class WiFiJammerApp(App):
             print(f"TUI Update Error: {e}", file=sys.stderr)
 
     def show_attack_config(self, target: NetworkInfo):
-        # In a real app, you'd show a config screen. 
-        # For now, let's start a default deauth attack.
         self._scanning = False
-        config = AttackConfig(
-            attack_type=AttackType.DEAUTH,
-            target_bssid=target.bssid,
-            interface=self.interface,
-            channel=target.channel,
-            delay=0.1
-        )
-        self.push_screen(AttackScreen())
-        self.run_attack(config)
+        self.push_screen(AttackConfigScreen(target))
+
+    def _start_attack_from_config(self):
+        """Read config screen inputs and start attack."""
+        try:
+            screen = self.screen
+            if not isinstance(screen, AttackConfigScreen):
+                return
+
+            # Get selected attack type from table
+            table = screen.query_one("#attack_type_table", DataTable)
+            if table.cursor_row is None:
+                return
+            attack_type_name = list(AttackType)[table.cursor_row]
+
+            delay = float(screen.query_one("#delay_input", Input).value or "0.1")
+            count = int(screen.query_one("#count_input", Input).value or "0")
+            client = screen.query_one("#client_input", Input).value or ""
+
+            config = AttackConfig(
+                attack_type=attack_type_name,
+                target_bssid=screen.target.bssid,
+                target_ssid=screen.target.ssid or "",
+                interface=self.interface,
+                channel=screen.target.channel,
+                count=count,
+                delay=delay,
+                target_client=client,
+            )
+
+            self.pop_screen()
+            self.push_screen(AttackScreen())
+            self.run_attack(config)
+        except Exception as e:
+            import sys
+            print(f"Config error: {e}", file=sys.stderr)
 
     def run_attack(self, config: AttackConfig):
         self.current_attack = self.factory.create_attack(config.attack_type, logger=self.logger)

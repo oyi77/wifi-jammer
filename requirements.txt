@@ -1,5 +1,4 @@
 scapy>=2.6.1
-netifaces
 psutil
 colorama
 rich

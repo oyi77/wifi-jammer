@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wifi-jammer"
+version = "2.0.0"
+description = "Advanced WiFi security testing tool — 10 attack types (deauth, PMKID capture, evil twin, channel hop), CLI/TUI/GUI, cross-platform Linux/macOS/Windows"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "oyi77"},
+]
+keywords = ["wifi", "security", "pentesting", "802.11", "deauth", "scapy", "wifi-jammer", "wireless-security", "pmkid", "evil-twin", "network-security"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Networking",
+]
+dependencies = [
+    "scapy>=2.6.1",
+    "psutil",
+    "colorama",
+    "rich",
+    "click",
+    "pyyaml",
+    "cryptography>=45.0.6",
+    "textual",
+    "PyQt6>=6.6.0",
+]
+
+[project.optional-dependencies]
+macos = ["pyobjc-framework-CoreWLAN>=10.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "flake8>=6.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+]
+all = [
+    "wifi-jammer[macos,dev]",
+]
+
+[project.scripts]
+wifi-jammer = "wifi_jammer.cli:cli"
+wifi-jammer-gui = "wifi_jammer.gui:launch_gui"
+wifi-jammer-tui = "wifi_jammer.tui:WiFiJammerApp"
+
+[project.urls]
+Homepage = "https://github.com/oyi77/wifi-jammer"
+Documentation = "https://oyi77.github.io/wifi-jammer/"
+Repository = "https://github.com/oyi77/wifi-jammer"
+Issues = "https://github.com/oyi77/wifi-jammer/issues"
+
+[tool.setuptools.packages.find]
+include = ["wifi_jammer*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

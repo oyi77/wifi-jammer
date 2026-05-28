@@ -89,16 +89,44 @@ def is_valid_packet_count(count: int) -> bool:
 
 def is_valid_delay(delay: float) -> bool:
     """Check if delay value is valid.
-    
+
     Args:
         delay: Delay in seconds
-        
+
     Returns:
         True if valid delay, False otherwise
     """
     if not isinstance(delay, (int, float)):
         return False
-    return 0.0 <= delay <= 60.0  # Reasonable range: 0 to 60 seconds
+    return 0.0 <= delay <= 60.0
+
+
+def is_valid_hop_interval(interval: float) -> bool:
+    """Check if channel hopping interval is valid.
+
+    Args:
+        interval: Hopping interval in seconds
+
+    Returns:
+        True if valid interval, False otherwise
+    """
+    if not isinstance(interval, (int, float)):
+        return False
+    return 0.1 <= interval <= 10.0
+
+
+def is_valid_capture_duration(duration: int) -> bool:
+    """Check if capture duration is valid.
+
+    Args:
+        duration: Capture duration in seconds
+
+    Returns:
+        True if valid duration, False otherwise
+    """
+    if not isinstance(duration, int):
+        return False
+    return 1 <= duration <= 3600
 
 
 def validate_attack_config(config) -> tuple[bool, Optional[str]]:

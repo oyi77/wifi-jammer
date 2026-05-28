@@ -1,7 +1,7 @@
 # WiFi Jammer Tool - Makefile
 # By Paijo
 
-.PHONY: help install install-dev test clean lint format demo run install-deps uninstall
+.PHONY: help install install-dev test clean lint format demo run install-deps uninstall docker-build docker-run
 
 # Variables
 PYTHON = python3
@@ -169,3 +169,10 @@ format-all: format lint ## Format and lint code
 # Default target
 all: install-dev test lint ## Install, test, and lint
 	@echo "$(GREEN)All tasks completed successfully!$(NC)"
+
+# Docker
+docker-build: ## Build Docker image
+	docker build -t wifi-jammer .
+
+docker-run: ## Run in Docker (privileged, host network)
+	docker run --rm --net=host --privileged wifi-jammer

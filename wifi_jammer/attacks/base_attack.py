@@ -14,7 +14,7 @@ from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11Deauth, Dot11Disas, Dot11Auth, Dot11AssoReq
 from wifi_jammer.core.interfaces import IAttackStrategy, AttackConfig
 from wifi_jammer.utils.logger import RichLogger
-from wifi_jammer.utils.validators import is_valid_bssid
+from wifi_jammer.utils.validators import is_valid_bssid, validate_attack_config
 from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
 from wifi_jammer.utils.platform_utils import is_macos, is_windows, is_unix_like
 

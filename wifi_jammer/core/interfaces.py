@@ -17,6 +17,10 @@ class AttackType(Enum):
     PROBE_RESPONSE = "probe_response"
     AUTH_FLOOD = "auth_flood"
     ASSOC_FLOOD = "assoc_flood"
+    CHANNEL_HOP = "channel_hop"
+    PMKID_CAPTURE = "pmkid_capture"
+    EVIL_TWIN = "evil_twin"
+    NETCUT = "netcut"
 
 
 @dataclass
@@ -48,6 +52,18 @@ class AttackConfig:
     delay: float = 0.1
     target_client: str = ""
     verbose: bool = False
+    hop_interval: float = 0.5
+    hop_channels: List[int] = None
+    capture_file: str = ""
+    capture_duration: int = 60
+    spoof_ssid: str = ""
+    target_clients: List[str] = None
+
+    def __post_init__(self):
+        if self.hop_channels is None:
+            self.hop_channels = []
+        if self.target_clients is None:
+            self.target_clients = []
 
 
 class INetworkScanner(ABC):

@@ -60,9 +60,9 @@ class TestConfigManager(unittest.TestCase):
     
     def tearDown(self):
         """Clean up test fixtures."""
-        if os.path.exists(self.config_file):
-            os.remove(self.config_file)
-        os.rmdir(self.temp_dir)
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_initialization_with_custom_file(self):
         """Test initialization with custom config file."""
