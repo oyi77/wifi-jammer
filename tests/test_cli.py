@@ -228,13 +228,13 @@ class TestWiFiJammerCLI(unittest.TestCase):
     @patch('platform.system', return_value="Linux")
     def test_check_root_linux(self, mock_platform):
         """Test root check on Linux."""
-        with patch('os.geteuid', return_value=0):
+        with patch('os.geteuid', return_value=0, create=True):
             result = self.cli.check_root()
             self.assertTrue(result)
-    
+
     @patch('platform.system', return_value="Linux")
     def test_check_root_linux_not_root(self, mock_platform):
         """Test root check on Linux when not root."""
-        with patch('os.geteuid', return_value=1000):
+        with patch('os.geteuid', return_value=1000, create=True):
             result = self.cli.check_root()
             self.assertFalse(result)

@@ -165,14 +165,14 @@ class TestRootStatus(unittest.TestCase):
     """Test root/admin status checking."""
     
     @patch('wifi_jammer.utils.platform_utils.is_windows', return_value=False)
-    @patch('os.geteuid')
+    @patch('os.geteuid', create=True)
     def test_require_root_unix_root(self, mock_geteuid, mock_is_windows):
         """Test require_root on Unix with root privileges."""
         mock_geteuid.return_value = 0
         self.assertFalse(require_root())  # False means has root
     
     @patch('wifi_jammer.utils.platform_utils.is_windows', return_value=False)
-    @patch('os.geteuid')
+    @patch('os.geteuid', create=True)
     def test_require_root_unix_not_root(self, mock_geteuid, mock_is_windows):
         """Test require_root on Unix without root privileges."""
         mock_geteuid.return_value = 1000
@@ -193,8 +193,8 @@ class TestRootStatus(unittest.TestCase):
         self.assertTrue(require_root())
     
     @patch('wifi_jammer.utils.platform_utils.is_windows', return_value=False)
-    @patch('os.geteuid')
-    @patch('os.getuid')
+    @patch('os.geteuid', create=True)
+    @patch('os.getuid', create=True)
     def test_get_root_status_unix_root(self, mock_getuid, mock_geteuid, mock_is_windows):
         """Test get_root_status on Unix with root."""
         mock_geteuid.return_value = 0
@@ -204,8 +204,8 @@ class TestRootStatus(unittest.TestCase):
         self.assertIn('root', msg.lower())
     
     @patch('wifi_jammer.utils.platform_utils.is_windows', return_value=False)
-    @patch('os.geteuid')
-    @patch('os.getuid')
+    @patch('os.geteuid', create=True)
+    @patch('os.getuid', create=True)
     def test_get_root_status_unix_not_root(self, mock_getuid, mock_geteuid, mock_is_windows):
         """Test get_root_status on Unix without root."""
         mock_geteuid.return_value = 1000
