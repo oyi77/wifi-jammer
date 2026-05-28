@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - run: pip install -r requirements.txt pytest
+    - run: pytest tests/ -v --tb=short
+
+  publish-pypi:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - run: pip install build
+    - run: python -m build
+    - uses: pypa/gh-action-pypi-publish@release/v1
+
+  create-release:
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Generate changelog
+      id: changelog
+      run: |
+        PREV_TAG=$(git tag --sort=-creatordate | head -2 | tail -1)
+        if [ -z "$PREV_TAG" ]; then
+          CHANGES=$(git log --oneline)
+        else
+          CHANGES=$(git log --oneline $PREV_TAG..HEAD)
+        fi
+        echo "changes<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    - uses: softprops/action-gh-release@v2
+      with:
+        body: |
+          ## Changes
+          ${{ steps.changelog.outputs.changes }}
+
+          ## Install
+          ```bash
+          pip install wifi-jammer
+          ```
+        files: |
+          dist/*
