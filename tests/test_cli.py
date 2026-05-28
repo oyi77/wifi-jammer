@@ -209,15 +209,15 @@ class TestWiFiJammerCLI(unittest.TestCase):
     
     def test_configure_attack(self):
         """Test attack configuration."""
-        # Mock prompts with proper side effects
         with patch('wifi_jammer.cli.Prompt.ask') as mock_prompt, \
-             patch('wifi_jammer.cli.Confirm.ask') as mock_confirm:
-            
+             patch('wifi_jammer.cli.Confirm.ask') as mock_confirm, \
+             patch.object(self.cli.scanner, 'get_interface_list', return_value=["wlan0"]):
+
             mock_prompt.side_effect = ["00:11:22:33:44:55", "wlan0", "6", "100", "0.1", ""]
             mock_confirm.return_value = False
-            
+
             config = self.cli.configure_attack(AttackType.DEAUTH)
-            
+
             self.assertEqual(config.attack_type, AttackType.DEAUTH)
             self.assertEqual(config.target_bssid, "00:11:22:33:44:55")
             self.assertEqual(config.interface, "wlan0")

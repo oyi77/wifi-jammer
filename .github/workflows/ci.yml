@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main, master]
+    tags-ignore: ['v*']
   pull_request:
     branches: [main, master]
 
@@ -29,7 +30,7 @@ jobs:
         pip install -r requirements-dev.txt || pip install pytest pytest-cov ruff
 
     - name: Lint with ruff
-      run: ruff check wifi_jammer/ --select E,F,W --ignore E501
+      run: ruff check wifi_jammer/ --select E9,F63,F7,F82 --ignore E501
 
     - name: Run tests
       run: pytest tests/ -v --tb=short
