@@ -1,5 +1,20 @@
 # AGENTS.md — wifi-jammer
 
+## MANDATORY PROCESS (8 Steps — No Skipping)
+
+Every task follows this sequence. No exceptions.
+
+1. **AUDIT** — Read existing code. Understand current state.
+2. **THINK** — Understand WHY. Intent vs literal.
+3. **BRAINSTORM** — ≥3 approaches. Score options.
+4. **PLAN** — Decompose. Risks. Rollback plan.
+5. **EXECUTE** — Build. TDD when possible.
+6. **TEST** — Run all tests. Break it first.
+7. **VERIFY** — Prove with literal output.
+8. **REVIEW** — Read your own diff before committing.
+
+Full details: `~/.1ai/core/PROCESS.md` (auto-injected by hooks)
+
 ## This repo
 [One sentence: what this repo does]
 Stack: Python

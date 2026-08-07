@@ -7,12 +7,13 @@ import platform
 import shutil
 import os
 import sys
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 from enum import Enum
 
 
 class PlatformType(Enum):
     """Supported platform types."""
+
     LINUX = "linux"
     MACOS = "macos"
     WINDOWS = "windows"
@@ -25,7 +26,7 @@ _platform_type: Optional[PlatformType] = None
 
 def get_platform_type() -> PlatformType:
     """Get the current platform type (cached).
-    
+
     Returns:
         PlatformType enum value for the current platform
     """
@@ -65,10 +66,10 @@ def is_unix_like() -> bool:
 
 def check_command_available(command: str) -> bool:
     """Check if a command is available in the system PATH.
-    
+
     Args:
         command: Command name to check
-        
+
     Returns:
         True if command is available, False otherwise
     """
@@ -77,15 +78,15 @@ def check_command_available(command: str) -> bool:
 
 def check_commands_available(commands: List[str]) -> Tuple[List[str], List[str]]:
     """Check multiple commands for availability.
-    
+
     Args:
         commands: List of command names to check
-        
+
     Returns:
         Tuple of (available_commands, missing_commands)
     """
-    available = []
-    missing = []
+    available: List[str] = []
+    missing: List[str] = []
     for cmd in commands:
         if check_command_available(cmd):
             available.append(cmd)
@@ -94,18 +95,18 @@ def check_commands_available(commands: List[str]) -> Tuple[List[str], List[str]]
     return available, missing
 
 
-def get_platform_specific_commands() -> dict:
+def get_platform_specific_commands() -> Dict[str, List[str]]:
     """Get platform-specific commands that should be available.
-    
+
     Returns:
         Dictionary mapping command categories to expected commands
     """
-    commands = {
+    commands: Dict[str, List[str]] = {
         "network_interface": [],
         "wireless": [],
         "scanning": [],
     }
-    
+
     if is_linux():
         commands["network_interface"] = ["ip", "iwconfig", "iw"]
         commands["wireless"] = ["iwconfig", "iw"]
@@ -118,48 +119,58 @@ def get_platform_specific_commands() -> dict:
         commands["network_interface"] = ["netsh"]
         commands["wireless"] = ["netsh"]
         commands["scanning"] = ["netsh"]
-    
+
     return commands
+
+
+def _is_windows_admin() -> bool:
+    """Check if running as admin on Windows.
+
+    Returns:
+        True if admin, False otherwise
+    """
+    if not is_windows():
+        return False
+    try:
+        import ctypes
+
+        # Use getattr to avoid mypy errors on non-Windows platforms
+        windll = getattr(ctypes, "windll", None)
+        if windll is None:
+            return False
+        return bool(windll.shell32.IsUserAnAdmin())
+    except (AttributeError, OSError):
+        return False
 
 
 def require_root() -> bool:
     """Check if root/admin privileges are required for current platform.
-    
+
     Returns:
         True if root privileges are typically required, False otherwise
     """
     if is_windows():
-        # Windows uses admin privileges, not root
-        try:
-            import ctypes
-            return not ctypes.windll.shell32.IsUserAnAdmin()
-        except (AttributeError, OSError):
-            return True
+        return not _is_windows_admin()
     else:
         # Unix-like systems require root (euid == 0)
         try:
             return os.geteuid() != 0
         except AttributeError:
-            # Windows doesn't have geteuid
             return False
 
 
 def get_root_status() -> Tuple[bool, str]:
     """Get current root/admin status.
-    
+
     Returns:
         Tuple of (is_root, status_message)
     """
     if is_windows():
-        try:
-            import ctypes
-            is_admin = ctypes.windll.shell32.IsUserAnAdmin()
-            if is_admin:
-                return True, "Running with administrator privileges"
-            else:
-                return False, "Administrator privileges required"
-        except (AttributeError, OSError) as e:
-            return False, f"Could not check Windows privileges: {e}"
+        is_admin = _is_windows_admin()
+        if is_admin:
+            return True, "Running with administrator privileges"
+        else:
+            return False, "Administrator privileges required"
     else:
         try:
             euid = os.geteuid()
@@ -167,14 +178,20 @@ def get_root_status() -> Tuple[bool, str]:
             if euid == 0:
                 return True, f"Running as root (EUID: {euid}, UID: {uid})"
             else:
-                return False, f"Root privileges required (current EUID: {euid}, UID: {uid})"
+                return (
+                    False,
+                    f"Root privileges required (current EUID: {euid}, UID: {uid})",
+                )
         except AttributeError:
-            return False, "Could not determine root status (platform may not support it)"
+            return (
+                False,
+                "Could not determine root status (platform may not support it)",
+            )
 
 
 def get_python_executable() -> str:
     """Get the current Python executable path.
-    
+
     Returns:
         Path to Python executable
     """
@@ -183,10 +200,10 @@ def get_python_executable() -> str:
 
 def get_venv_python_path(project_root: Optional[str] = None) -> Optional[str]:
     """Get the path to venv Python executable.
-    
+
     Args:
         project_root: Optional project root directory. If None, tries to detect it.
-        
+
     Returns:
         Path to venv Python if exists, None otherwise
     """
@@ -195,27 +212,27 @@ def get_venv_python_path(project_root: Optional[str] = None) -> Optional[str]:
         current_file = os.path.abspath(__file__)
         # Go up from utils/platform_utils.py to project root
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
-    
+
     venv_python = os.path.join(project_root, "venv", "bin", "python3")
     if os.path.exists(venv_python):
         return venv_python
-    
+
     # Also check for Windows venv structure
     venv_python_win = os.path.join(project_root, "venv", "Scripts", "python.exe")
     if os.path.exists(venv_python_win):
         return venv_python_win
-    
+
     return None
 
 
 def get_system_python_paths() -> List[str]:
     """Get common system Python paths for current platform.
-    
+
     Returns:
         List of potential Python executable paths
     """
-    paths = []
-    
+    paths: List[str] = []
+
     if is_macos():
         paths = [
             "/usr/bin/python3",
@@ -232,27 +249,35 @@ def get_system_python_paths() -> List[str]:
         # Windows Python paths are more variable
         # Common locations
         program_files = os.environ.get("ProgramFiles", "C:\\Program Files")
-        program_files_x86 = os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")
+        program_files_x86 = os.environ.get(
+            "ProgramFiles(x86)", "C:\\Program Files (x86)"
+        )
         paths = [
             os.path.join(program_files, "Python3*", "python.exe"),
             os.path.join(program_files_x86, "Python3*", "python.exe"),
-            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Python", "Python3*", "python.exe"),
+            os.path.join(
+                os.environ.get("LOCALAPPDATA", ""),
+                "Programs",
+                "Python",
+                "Python3*",
+                "python.exe",
+            ),
         ]
         # Filter out non-existent paths
         paths = [p for p in paths if os.path.exists(p)]
-    
+
     return paths
 
 
 def get_airport_path() -> Optional[str]:
     """Get the path to macOS airport utility.
-    
+
     Returns:
         Path to airport utility if exists, None otherwise
     """
     if not is_macos():
         return None
-    
+
     airport_path = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
     if os.path.exists(airport_path):
         return airport_path
@@ -261,45 +286,34 @@ def get_airport_path() -> Optional[str]:
 
 def get_bpf_devices() -> List[str]:
     """Get available BPF devices on macOS.
-    
+
     Returns:
         List of BPF device paths
     """
     if not is_macos():
         return []
-    
+
     import glob
+
     bpf_devices = glob.glob("/dev/bpf*")
     return sorted(bpf_devices)
 
 
 def format_platform_info() -> str:
     """Get formatted platform information string.
-    
+
     Returns:
         Formatted string with platform details
     """
     platform_type = get_platform_type()
-    is_root, root_msg = get_root_status()
-    
     info = f"Platform: {platform_type.value}\n"
     info += f"System: {platform.system()}\n"
     info += f"Release: {platform.release()}\n"
+    info += f"Version: {platform.version()}\n"
     info += f"Machine: {platform.machine()}\n"
-    info += f"Python: {sys.executable}\n"
-    info += f"Root Status: {root_msg}\n"
-    
-    # Add command availability
-    commands = get_platform_specific_commands()
-    info += "\nCommand Availability:\n"
-    for category, cmd_list in commands.items():
-        available, missing = check_commands_available(cmd_list)
-        info += f"  {category}: "
-        if available:
-            info += f"Available: {', '.join(available)}"
-        if missing:
-            info += f"Missing: {', '.join(missing)}"
-        info += "\n"
-    
-    return info
+    info += f"Python: {sys.version.split()[0]}\n"
 
+    root_status, msg = get_root_status()
+    info += f"Root/Admin: {'Yes' if root_status else 'No'} ({msg})\n"
+
+    return info

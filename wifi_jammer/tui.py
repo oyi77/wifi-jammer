@@ -4,29 +4,48 @@ Modern TUI for WiFi Jammer using Textual.
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical, Grid
-from textual.widgets import Header, Footer, Static, DataTable, Button, Input, Log, Label, Sparkline
+from textual.widgets import (
+    Header,
+    Footer,
+    DataTable,
+    Button,
+    Input,
+    Log,
+    Label,
+)
 from textual.screen import Screen
 from textual.binding import Binding
-from textual.message import Message
 import threading
 import time
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from wifi_jammer.core.interfaces import NetworkInfo, AttackType, AttackConfig
+if TYPE_CHECKING:
+    from textual.widgets import Label, Log, Button, Input
+    from wifi_jammer.core.interfaces import (
+        NetworkInfo,
+        AttackType,
+        AttackConfig,
+        IAttackStrategy,
+    )
+    from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
+    from wifi_jammer.scanner import ScapyNetworkScanner
+    from wifi_jammer.factory import AttackFactory
+    from wifi_jammer.utils import RichLogger
+    from wifi_jammer.attacks.base_attack import AttackStats
 from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
 from wifi_jammer.scanner import ScapyNetworkScanner
 from wifi_jammer.factory import AttackFactory
 from wifi_jammer.utils import RichLogger
 
-class NetworkTable(DataTable):
+
+class NetworkTable(DataTable[str]):
     """A data table to display discovered networks."""
-    
+
     def on_mount(self) -> None:
         self.cursor_type = "row"
         self.add_columns("SSID", "BSSID", "Ch", "RSSI", "Security")
 
-    def update_networks(self, networks: List[NetworkInfo]):
-        self.clear()
+    def update_networks(self, networks: List[NetworkInfo]) -> None:
         for network in networks:
             self.add_row(
                 network.ssid or "Hidden",
@@ -34,32 +53,39 @@ class NetworkTable(DataTable):
                 str(network.channel),
                 f"{network.rssi} dBm",
                 network.encryption,
-                key=network.bssid
+                key=network.bssid,
             )
 
-class ScanScreen(Screen):
+
+class ScanScreen(Screen[None]):
     """Screen for scanning networks."""
-    
+
     def __init__(self, interface: Optional[str]):
         super().__init__()
         self.interface = interface
-    
+
     def compose(self) -> ComposeResult:
         yield Header()
-        interface_display = self.interface if self.interface else "No interface selected"
+        interface_display = (
+            self.interface if self.interface else "No interface selected"
+        )
         yield Container(
-            Label(f"Scanning for networks on [cyan]{interface_display}[/cyan]...", id="scan_status"),
+            Label(
+                f"Scanning for networks on [cyan]{interface_display}[/cyan]...",
+                id="scan_status",
+            ),
             NetworkTable(id="network_table"),
             Horizontal(
                 Button("Stop Scan", variant="error", id="stop_scan"),
                 Button("Select & Attack", variant="success", id="select_target"),
-                classes="button_row"
+                classes="button_row",
             ),
-            id="scan_container"
+            id="scan_container",
         )
         yield Footer()
 
-class AttackConfigScreen(Screen):
+
+class AttackConfigScreen(Screen[None]):
     """Screen for configuring attack parameters."""
 
     def __init__(self, target: NetworkInfo):
@@ -69,8 +95,13 @@ class AttackConfigScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         yield Container(
-            Label(f"[bold]Configure Attack for {self.target.ssid or 'Hidden'}[/bold]", id="config_title"),
-            Label(f"BSSID: {self.target.bssid} | Channel: {self.target.channel} | RSSI: {self.target.rssi} dBm"),
+            Label(
+                f"[bold]Configure Attack for {self.target.ssid or 'Hidden'}[/bold]",
+                id="config_title",
+            ),
+            Label(
+                f"BSSID: {self.target.bssid} | Channel: {self.target.channel} | RSSI: {self.target.rssi} dBm"
+            ),
             Label("Attack Type:"),
             DataTable(id="attack_type_table"),
             Label("Delay (seconds):"),
@@ -82,9 +113,9 @@ class AttackConfigScreen(Screen):
             Horizontal(
                 Button("Start Attack", variant="error", id="start_attack_btn"),
                 Button("Cancel", variant="default", id="cancel_config_btn"),
-                classes="button_row"
+                classes="button_row",
             ),
-            id="config_container"
+            id="config_container",
         )
         yield Footer()
 
@@ -108,9 +139,9 @@ class AttackConfigScreen(Screen):
             table.add_row(atype.value, desc, key=atype.value)
 
 
-class AttackScreen(Screen):
+class AttackScreen(Screen[None]):
     """Screen for monitoring the attack."""
-    
+
     def compose(self) -> ComposeResult:
         yield Header()
         yield Container(
@@ -125,19 +156,20 @@ class AttackScreen(Screen):
                     Label("0.0%", id="success_rate", classes="stat_value"),
                     Label("Duration:", classes="stat_label"),
                     Label("0s", id="duration", classes="stat_value"),
-                    id="stats_grid"
+                    id="stats_grid",
                 ),
                 Label("Activity Log:", id="log_label"),
                 Log(id="attack_log"),
                 Button("STOP ATTACK", variant="error", id="stop_attack"),
-                id="attack_vbox"
+                id="attack_vbox",
             )
         )
         yield Footer()
 
-class WiFiJammerApp(App):
+
+class WiFiJammerApp(App[None]):
     """Main WiFi Jammer TUI application."""
-    
+
     CSS = """
     #scan_container {
         padding: 1;
@@ -179,42 +211,50 @@ class WiFiJammerApp(App):
         margin-bottom: 1;
     }
     """
-    
+
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("r", "refresh", "Refresh Scan"),
     ]
 
-    def __init__(self, interface: Optional[str] = None):
+    def __init__(self, interface: Optional[str] = None) -> None:
         super().__init__()
-        self.interface = interface
+        self.interface: Optional[str] = interface
         # Use quiet logger for TUI to avoid cluttering the interface
         self.logger = RichLogger(quiet=True)
         # Ensure scanner uses system Python with permission on macOS
         self.scanner = ScapyNetworkScanner(logger=self.logger)
         self.factory = AttackFactory()
-        self.current_attack = None
-        self.networks = []
+        self.current_attack: Optional["IAttackStrategy"] = None
+        self.networks: List[NetworkInfo] = []
         self._scanning = False
-        self._scan_thread = None
+        self._scan_thread: Optional[threading.Thread] = None
         self.platform_interface = PlatformInterfaceFactory.create()
-        
+        self._permission_warning: Optional[str] = None
         # If no interface provided, try to get one
         if not self.interface:
             wireless_interfaces = self.platform_interface.get_wireless_interfaces()
-            available_interfaces = [iface.name for iface in wireless_interfaces 
-                                  if iface.status == "Available"]
+            available_interfaces = [
+                iface.name
+                for iface in wireless_interfaces
+                if iface.status == "Available"
+            ]
             if available_interfaces:
                 self.interface = available_interfaces[0]
-        
+
         # Check and warn about Python/permission on macOS
         import platform
+
         if platform.system() == "Darwin":
-            from wifi_jammer.utils.python_detector import find_python_with_permission, test_wifi_access
+            from wifi_jammer.utils.python_detector import (
+                find_python_with_permission,
+                test_wifi_access,
+            )
             import sys
+
             python_with_permission = find_python_with_permission()
             current_python = sys.executable
-            
+
             if python_with_permission and python_with_permission != current_python:
                 # Log warning but don't block - TUI should still work
                 has_access, ssid, bssid = test_wifi_access(current_python)
@@ -230,12 +270,16 @@ class WiFiJammerApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        interface_display = self.interface if self.interface else "No interface selected"
+        interface_display = (
+            self.interface if self.interface else "No interface selected"
+        )
         yield Container(
-            Label(f"Welcome to WiFi Jammer Tool v2.0 - [cyan]{interface_display}[/cyan]"),
+            Label(
+                f"Welcome to WiFi Jammer Tool v2.0 - [cyan]{interface_display}[/cyan]"
+            ),
             Button("Start Scanning", variant="primary", id="start_scan_btn"),
             Button("Select Interface", variant="default", id="select_interface_btn"),
-            id="welcome_container"
+            id="welcome_container",
         )
         yield Footer()
 
@@ -258,19 +302,27 @@ class WiFiJammerApp(App):
             try:
                 current_screen = self.screen
                 table = current_screen.query_one(NetworkTable)
-                if table.cursor_row is not None and table.cursor_row < len(self.networks):
+                if table.cursor_row is not None and table.cursor_row < len(
+                    self.networks
+                ):
                     bssid = table.get_row_at(table.cursor_row)[1]
                     target = next((n for n in self.networks if n.bssid == bssid), None)
                     if target:
                         self.show_attack_config(target)
                     else:
                         # Show message if no target selected
-                        self.update_scan_status("[yellow]Please select a network from the table first[/yellow]")
+                        self.update_scan_status(
+                            "[yellow]Please select a network from the table first[/yellow]"
+                        )
                 else:
-                    self.update_scan_status("[yellow]Please select a network from the table first[/yellow]")
+                    self.update_scan_status(
+                        "[yellow]Please select a network from the table first[/yellow]"
+                    )
             except Exception as e:
                 # If table not found, show helpful message
-                self.update_scan_status(f"[red]Error: Could not find network table. {e}[/red]")
+                self.update_scan_status(
+                    f"[red]Error: Could not find network table. {e}[/red]"
+                )
         elif event.button.id == "start_attack_btn":
             self._start_attack_from_config()
         elif event.button.id == "cancel_config_btn":
@@ -280,139 +332,153 @@ class WiFiJammerApp(App):
                 self.current_attack.stop()
             self.pop_screen()
 
-    def start_scanning(self):
+    def start_scanning(self) -> None:
         # Ensure we have an interface
         if not self.interface:
             self._select_interface()
             if not self.interface:
-                self.update_scan_status("[red]No interface available. Cannot start scanning.[/red]")
+                self.update_scan_status(
+                    "[red]No interface available. Cannot start scanning.[/red]"
+                )
                 return
-        
+
         # Show permission warning if applicable
-        if hasattr(self, '_permission_warning') and self._permission_warning:
+        if hasattr(self, "_permission_warning") and self._permission_warning:
             self.update_scan_status(f"[yellow]⚠️  {self._permission_warning}[/yellow]")
             time.sleep(2)  # Show warning briefly
-        
+
         self._scanning = True
         self._scan_thread = threading.Thread(target=self._scan_loop)
         self._scan_thread.daemon = True
         self._scan_thread.start()
 
-    def _scan_loop(self):
+    def _scan_loop(self) -> None:
         scan_count = 0
-        last_error = None
+        last_error: Optional[str] = None
         while self._scanning:
             try:
                 scan_count += 1
                 status_msg = f"Scanning on {self.interface}... (attempt {scan_count})"
                 self.call_from_thread(self.update_scan_status, status_msg)
-                
+
                 # Perform scan with timeout protection
-                import signal
                 import threading
-                
+
                 networks = []
                 scan_error = None
-                
-                def _do_scan():
+
+                def _do_scan() -> None:
                     nonlocal networks, scan_error
                     try:
-                        networks = self.scanner.scan_networks(self.interface)
+                        if self.interface is not None:
+                            networks = self.scanner.scan_networks(self.interface)
+                        else:
+                            scan_error = "No interface selected"
                     except Exception as e:
                         scan_error = str(e)
-                
+
                 scan_thread = threading.Thread(target=_do_scan)
                 scan_thread.daemon = True
                 scan_thread.start()
                 scan_thread.join(timeout=30)  # 30 second timeout
-                
+
                 if scan_thread.is_alive():
                     # Scan is taking too long
                     self.call_from_thread(
-                        self.update_scan_status, 
-                        f"[yellow]Scan taking longer than expected... (attempt {scan_count})[/yellow]"
+                        self.update_scan_status,
+                        f"[yellow]Scan taking longer than expected... (attempt {scan_count})[/yellow]",
                     )
                     time.sleep(2)
                     continue
-                
+
                 if scan_error:
                     raise Exception(scan_error)
-                
+
                 # Check if networks were blocked by privacy
-                privacy_blocked = getattr(self.scanner, '_privacy_blocked_count', 0)
-                
+                privacy_blocked = getattr(self.scanner, "_privacy_blocked_count", 0)
+
                 if networks:
                     self.networks = networks
                     self.call_from_thread(self.update_network_list)
                     self.call_from_thread(
-                        self.update_scan_status, 
-                        f"[green]Found {len(networks)} network(s) on {self.interface}[/green]"
+                        self.update_scan_status,
+                        f"[green]Found {len(networks)} network(s) on {self.interface}[/green]",
                     )
                     last_error = None  # Clear previous error on success
                 elif privacy_blocked > 0:
                     # Networks were found but blocked by privacy
                     self.call_from_thread(
-                        self.update_scan_status, 
+                        self.update_scan_status,
                         f"[yellow]⚠️  {privacy_blocked} network(s) detected but blocked by privacy[/yellow]\n"
                         "[dim]Location Services permission required to see SSID/BSSID[/dim]\n"
-                        "[cyan]Fix: Run 'bash install.sh' or grant permission in System Settings[/cyan]"
+                        "[cyan]Fix: Run 'bash install.sh' or grant permission in System Settings[/cyan]",
                     )
                     last_error = f"{privacy_blocked} networks blocked by privacy"
-                elif last_error and ("privacy" in last_error.lower() or "permission" in last_error.lower()):
+                elif last_error and (
+                    "privacy" in last_error.lower()
+                    or "permission" in last_error.lower()
+                ):
                     self.call_from_thread(
-                        self.update_scan_status, 
+                        self.update_scan_status,
                         f"[red]Permission issue: {last_error}[/red]\n"
-                        "[dim]Fix: System Settings → Privacy → Location Services → Enable for Python[/dim]"
+                        "[dim]Fix: System Settings → Privacy → Location Services → Enable for Python[/dim]",
                     )
                 elif last_error:
                     self.call_from_thread(
-                        self.update_scan_status, 
-                        f"[yellow]No networks found... (attempt {scan_count}) - {last_error}[/yellow]"
+                        self.update_scan_status,
+                        f"[yellow]No networks found... (attempt {scan_count}) - {last_error}[/yellow]",
                     )
                 else:
                     self.call_from_thread(
-                        self.update_scan_status, 
-                        f"[dim]Scanning... (attempt {scan_count}) - No networks found yet[/dim]"
+                        self.update_scan_status,
+                        f"[dim]Scanning... (attempt {scan_count}) - No networks found yet[/dim]",
                     )
             except Exception as e:
                 error_msg = str(e)
                 last_error = error_msg
-                
+
                 # Check if it's a permission/privacy issue
-                if "privacy" in error_msg.lower() or "permission" in error_msg.lower() or "location" in error_msg.lower():
+                if (
+                    "privacy" in error_msg.lower()
+                    or "permission" in error_msg.lower()
+                    or "location" in error_msg.lower()
+                ):
                     self.call_from_thread(
-                        self.update_scan_status, 
+                        self.update_scan_status,
                         f"[red]⚠️  Location Services Permission Required[/red]\n"
                         f"[dim]Error: {error_msg}[/dim]\n"
-                        "[yellow]Fix: Run 'bash install.sh' or grant permission in System Settings[/yellow]"
+                        "[yellow]Fix: Run 'bash install.sh' or grant permission in System Settings[/yellow]",
                     )
                 else:
                     self.call_from_thread(
-                        self.update_scan_status, 
-                        f"[red]Error: {error_msg}[/red]"
+                        self.update_scan_status, f"[red]Error: {error_msg}[/red]"
                     )
-                
+
                 # Log to console for debugging
                 import sys
+
                 print(f"TUI Scan Error (attempt {scan_count}): {e}", file=sys.stderr)
                 import traceback
+
                 traceback.print_exc(file=sys.stderr)
-            
+
             time.sleep(3)  # Wait 3 seconds between scans
 
-    def update_scan_status(self, message: str):
+    def update_scan_status(self, message: str) -> None:
         """Update the scan status label."""
         try:
             # Query from current screen (ScanScreen) not app level
             current_screen = self.screen
             if isinstance(current_screen, ScanScreen):
-                status_label = current_screen.query_one("#scan_status", expect_type=Label)
+                status_label = current_screen.query_one(
+                    "#scan_status", expect_type=Label
+                )
                 status_label.update(message)
-        except Exception as e:
+        except Exception:
             # If we can't find the label, it's okay - might be on different screen
             pass
 
-    def update_network_list(self):
+    def update_network_list(self) -> None:
         """Update the network table with scan results."""
         try:
             # Query from current screen (ScanScreen) not app level
@@ -423,13 +489,13 @@ class WiFiJammerApp(App):
         except Exception as e:
             # Log error but don't crash - might be on wrong screen
             import sys
+
             print(f"TUI Update Error: {e}", file=sys.stderr)
 
-    def show_attack_config(self, target: NetworkInfo):
-        self._scanning = False
+    def show_attack_config(self, target: NetworkInfo) -> None:
         self.push_screen(AttackConfigScreen(target))
 
-    def _start_attack_from_config(self):
+    def _start_attack_from_config(self) -> None:
         """Read config screen inputs and start attack."""
         try:
             screen = self.screen
@@ -450,7 +516,7 @@ class WiFiJammerApp(App):
                 attack_type=attack_type_name,
                 target_bssid=screen.target.bssid,
                 target_ssid=screen.target.ssid or "",
-                interface=self.interface,
+                interface=self.interface or "",
                 channel=screen.target.channel,
                 count=count,
                 delay=delay,
@@ -462,52 +528,61 @@ class WiFiJammerApp(App):
             self.run_attack(config)
         except Exception as e:
             import sys
+
             print(f"Config error: {e}", file=sys.stderr)
 
-    def run_attack(self, config: AttackConfig):
-        self.current_attack = self.factory.create_attack(config.attack_type, logger=self.logger)
+    def run_attack(self, config: AttackConfig) -> None:
+        self.current_attack = self.factory.create_attack(config.attack_type)
         self.current_attack.set_progress_callback(self.update_stats)
-        
-        def _exec():
-            self.current_attack.execute(config)
-            while self.current_attack.is_running():
-                time.sleep(1)
-        
+
+        def _exec() -> None:
+            if self.current_attack is not None:
+                self.current_attack.execute(config)
+                while self.current_attack.is_running():
+                    time.sleep(1)
+
         attack_thread = threading.Thread(target=_exec)
         attack_thread.daemon = True
         attack_thread.start()
 
-    def update_stats(self, stats):
+    def update_stats(self, stats: "AttackStats") -> None:
         try:
             self.call_from_thread(self._update_ui_stats, stats)
         except (AttributeError, RuntimeError, ValueError):
             # UI update failed - screen may not be ready or stats invalid
             pass
 
-    def _update_ui_stats(self, stats):
+    def _update_ui_stats(self, stats: "AttackStats") -> None:
         screen = self.screen
         if isinstance(screen, AttackScreen):
-            screen.query_one("#packets_sent").update(str(stats.packets_sent))
-            screen.query_one("#pps").update(f"{stats.packets_per_second:.1f}")
-            screen.query_one("#success_rate").update(f"{stats.success_rate:.1f}%")
-            screen.query_one("#duration").update(f"{stats.duration:.1f}s")
-            
-            log = screen.query_one("#attack_log")
+            packets_sent = screen.query_one("#packets_sent", expect_type=Label)
+            pps = screen.query_one("#pps", expect_type=Label)
+            success_rate = screen.query_one("#success_rate", expect_type=Label)
+            duration = screen.query_one("#duration", expect_type=Label)
+            packets_sent.update(str(stats.packets_sent))
+            pps.update(f"{stats.packets_per_second:.1f}")
+            success_rate.update(f"{stats.success_rate:.1f}%")
+            duration.update(f"{stats.duration:.1f}s")
+
+            log = screen.query_one("#attack_log", expect_type=Log)
             if stats.errors and len(stats.errors) > 0:
                 log.write_line(f"[red]Error: {stats.errors[-1]}[/red]")
             else:
                 log.write_line(f"Sent {stats.packets_sent} packets...")
-    
-    def _select_interface(self):
+
+    def _select_interface(self) -> None:
         """Select interface from available wireless interfaces."""
         wireless_interfaces = self.platform_interface.get_wireless_interfaces()
-        available_interfaces = [iface.name for iface in wireless_interfaces 
-                              if iface.status == "Available"]
-        
+        available_interfaces = [
+            iface.name for iface in wireless_interfaces if iface.status == "Available"
+        ]
+
         if not available_interfaces:
             # Show error message
             try:
-                welcome_label = self.query_one("#welcome_container Label")
+                welcome_label = self.query_one(
+                    "#welcome_container Label", expect_type=Label
+                )
                 welcome_label.update(
                     "[red]No available wireless interfaces found![/red]\n"
                     "[dim]Please ensure you have a wireless adapter connected.[/dim]"
@@ -516,12 +591,14 @@ class WiFiJammerApp(App):
                 # UI element not found or update failed
                 pass
             return
-        
+
         # If only one interface, use it automatically
         if len(available_interfaces) == 1:
             self.interface = available_interfaces[0]
             try:
-                welcome_label = self.query_one("#welcome_container Label")
+                welcome_label = self.query_one(
+                    "#welcome_container Label", expect_type=Label
+                )
                 welcome_label.update(
                     f"Welcome to WiFi Jammer Tool v2.0 - [cyan]{self.interface}[/cyan]"
                 )
@@ -533,7 +610,9 @@ class WiFiJammerApp(App):
             # In a full implementation, you'd show a selection dialog
             self.interface = available_interfaces[0]
             try:
-                welcome_label = self.query_one("#welcome_container Label")
+                welcome_label = self.query_one(
+                    "#welcome_container Label", expect_type=Label
+                )
                 welcome_label.update(
                     f"Welcome to WiFi Jammer Tool v2.0 - [cyan]{self.interface}[/cyan]\n"
                     f"[dim]Note: Using first available interface. {len(available_interfaces)} interfaces found.[/dim]"
@@ -542,8 +621,10 @@ class WiFiJammerApp(App):
                 # UI element not found or update failed
                 pass
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1:
         app = WiFiJammerApp(sys.argv[1])
         app.run()

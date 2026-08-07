@@ -5,32 +5,46 @@ Attack configuration widget for Qt GUI.
 import threading
 from typing import Optional
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QComboBox, QLabel, QLineEdit, QSpinBox, QDoubleSpinBox,
-    QGroupBox, QFormLayout, QMessageBox, QCheckBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QComboBox,
+    QLabel,
+    QLineEdit,
+    QSpinBox,
+    QDoubleSpinBox,
+    QGroupBox,
+    QFormLayout,
+    QMessageBox,
+    QCheckBox,
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 
 from wifi_jammer.core.interfaces import (
-    AttackConfig, AttackType, NetworkInfo, IAttackFactory, ILogger
+    AttackConfig,
+    NetworkInfo,
+    IAttackFactory,
+    IAttackStrategy,
+    ILogger,
 )
 from wifi_jammer.scanner import ScapyNetworkScanner
 
 
 class AttackConfigWidget(QWidget):
     """Widget for configuring and launching attacks."""
-    
+
     attack_started = pyqtSignal(AttackConfig)
     attack_stopped = pyqtSignal()
-    
+
     def __init__(
         self,
         attack_factory: IAttackFactory,
         logger: ILogger,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         """Initialize the attack configuration widget.
-        
+
         Args:
             attack_factory: Attack factory instance
             logger: Logger instance
@@ -40,22 +54,22 @@ class AttackConfigWidget(QWidget):
         self.attack_factory = attack_factory
         self.logger = logger
         self.scanner = ScapyNetworkScanner(logger)
-        self.current_attack = None
+        self.current_attack: Optional[IAttackStrategy] = None
         self.attack_thread: Optional[threading.Thread] = None
         self.selected_network: Optional[NetworkInfo] = None
-        
+
         self._init_ui()
         self._load_attack_types()
-    
+
     def _init_ui(self) -> None:
         """Initialize the user interface."""
         layout = QVBoxLayout(self)
-        
+
         # Header
         header = QLabel("Attack Configuration")
         header.setStyleSheet("font-size: 16pt; font-weight: bold;")
         layout.addWidget(header)
-        
+
         # Network info group
         network_group = QGroupBox("Selected Network")
         network_layout = QFormLayout()
@@ -67,25 +81,25 @@ class AttackConfigWidget(QWidget):
         network_layout.addRow("Channel:", self.network_channel_label)
         network_group.setLayout(network_layout)
         layout.addWidget(network_group)
-        
+
         # Attack configuration group
         config_group = QGroupBox("Attack Settings")
         config_layout = QFormLayout()
-        
+
         # Attack type
         self.attack_type_combo = QComboBox()
         config_layout.addRow("Attack Type:", self.attack_type_combo)
-        
+
         # Interface
         self.interface_combo = QComboBox()
         self._load_interfaces()
         config_layout.addRow("Interface:", self.interface_combo)
-        
+
         # Source MAC (optional)
         self.source_mac_edit = QLineEdit()
         self.source_mac_edit.setPlaceholderText("Auto (random)")
         config_layout.addRow("Source MAC:", self.source_mac_edit)
-        
+
         # Count (0 = infinite)
         self.count_spin = QSpinBox()
         self.count_spin.setMinimum(0)
@@ -93,7 +107,7 @@ class AttackConfigWidget(QWidget):
         self.count_spin.setValue(0)
         self.count_spin.setSpecialValueText("Infinite")
         config_layout.addRow("Packet Count:", self.count_spin)
-        
+
         # Delay
         self.delay_spin = QDoubleSpinBox()
         self.delay_spin.setMinimum(0.01)
@@ -102,20 +116,20 @@ class AttackConfigWidget(QWidget):
         self.delay_spin.setSingleStep(0.01)
         self.delay_spin.setSuffix(" seconds")
         config_layout.addRow("Delay:", self.delay_spin)
-        
+
         # Target client (optional)
         self.target_client_edit = QLineEdit()
         self.target_client_edit.setPlaceholderText("All clients (leave empty)")
         config_layout.addRow("Target Client MAC:", self.target_client_edit)
-        
+
         # Verbose
         self.verbose_check = QCheckBox()
         self.verbose_check.setChecked(False)
         config_layout.addRow("Verbose:", self.verbose_check)
-        
+
         config_group.setLayout(config_layout)
         layout.addWidget(config_group)
-        
+
         # Control buttons
         button_layout = QHBoxLayout()
         self.start_button = QPushButton("Start Attack")
@@ -129,18 +143,17 @@ class AttackConfigWidget(QWidget):
         button_layout.addWidget(self.stop_button)
         button_layout.addStretch()
         layout.addLayout(button_layout)
-        
+
         layout.addStretch()
-    
+
     def _load_attack_types(self) -> None:
         """Load available attack types."""
         attacks = self.attack_factory.get_available_attacks()
         for attack_type in attacks:
             self.attack_type_combo.addItem(
-                attack_type.value.replace("_", " ").title(),
-                attack_type
+                attack_type.value.replace("_", " ").title(), attack_type
             )
-    
+
     def _load_interfaces(self) -> None:
         """Load available network interfaces."""
         try:
@@ -149,10 +162,10 @@ class AttackConfigWidget(QWidget):
             self.interface_combo.addItems(interfaces)
         except Exception as e:
             self.logger.error(f"Error loading interfaces: {e}")
-    
+
     def set_selected_network(self, network: NetworkInfo) -> None:
         """Set the selected network for attack.
-        
+
         Args:
             network: Selected network information
         """
@@ -160,35 +173,29 @@ class AttackConfigWidget(QWidget):
         self.network_ssid_label.setText(network.ssid)
         self.network_bssid_label.setText(network.bssid)
         self.network_channel_label.setText(str(network.channel))
-    
+
     def _start_attack(self) -> None:
         """Start the configured attack."""
         if not self.selected_network:
             QMessageBox.warning(
                 self,
                 "No Network Selected",
-                "Please select a network from the Network Scanner tab first."
+                "Please select a network from the Network Scanner tab first.",
             )
             return
-        
+
         interface = self.interface_combo.currentText()
         if not interface:
             QMessageBox.warning(
-                self,
-                "No Interface",
-                "Please select a network interface"
+                self, "No Interface", "Please select a network interface"
             )
             return
-        
+
         attack_type = self.attack_type_combo.currentData()
         if not attack_type:
-            QMessageBox.warning(
-                self,
-                "No Attack Type",
-                "Please select an attack type"
-            )
+            QMessageBox.warning(self, "No Attack Type", "Please select an attack type")
             return
-        
+
         # Confirm attack
         reply = QMessageBox.question(
             self,
@@ -196,12 +203,12 @@ class AttackConfigWidget(QWidget):
             f"Start {attack_type.value} attack on {self.selected_network.ssid}?\n\n"
             "⚠️ Make sure you have permission to test this network!",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.No,
         )
-        
+
         if reply != QMessageBox.StandardButton.Yes:
             return
-        
+
         # Create attack config
         config = AttackConfig(
             attack_type=attack_type,
@@ -213,62 +220,56 @@ class AttackConfigWidget(QWidget):
             count=self.count_spin.value(),
             delay=self.delay_spin.value(),
             target_client=self.target_client_edit.text() or "",
-            verbose=self.verbose_check.isChecked()
+            verbose=self.verbose_check.isChecked(),
         )
-        
+
         # Create and start attack
         try:
-            self.current_attack = self.attack_factory.create_attack(
-                attack_type, logger=self.logger
-            )
-            
+            self.current_attack = self.attack_factory.create_attack(attack_type)
+
             # Start attack in background thread
             self.attack_thread = threading.Thread(
-                target=self._run_attack,
-                args=(config,),
-                daemon=True
+                target=self._run_attack, args=(config,), daemon=True
             )
             self.attack_thread.start()
-            
+
             self.start_button.setEnabled(False)
             self.stop_button.setEnabled(True)
             self.attack_started.emit(config)
-            
+
         except Exception as e:
             self.logger.error(f"Failed to start attack: {e}")
             QMessageBox.critical(
-                self,
-                "Attack Failed",
-                f"Failed to start attack:\n{str(e)}"
+                self, "Attack Failed", f"Failed to start attack:\n{str(e)}"
             )
-    
+
     def _run_attack(self, config: AttackConfig) -> None:
         """Run the attack in background thread.
-        
+
         Args:
             config: Attack configuration
         """
         try:
+            if self.current_attack is None:
+                return
             self.current_attack.execute(config)
             # Wait for attack to complete
-            if self.current_attack and self.current_attack._thread:
-                self.current_attack._thread.join()
+            self.current_attack.join()
         except Exception as e:
             self.logger.error(f"Attack error: {e}")
         finally:
             # Reset UI in main thread
             self._attack_finished()
-    
+
     def _stop_attack(self) -> None:
         """Stop the current attack."""
         if self.current_attack:
             self.current_attack.stop()
             self._attack_finished()
-    
+
     def _attack_finished(self) -> None:
         """Handle attack completion."""
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
         self.current_attack = None
         self.attack_stopped.emit()
-

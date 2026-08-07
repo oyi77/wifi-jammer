@@ -2,26 +2,38 @@
 Attack factory implementation.
 """
 
-from typing import Dict, Type
-from wifi_jammer.core.interfaces import IAttackFactory, IAttackStrategy, AttackType
+from typing import Dict, Type, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from wifi_jammer.core.interfaces import IAttackStrategy
+
+from wifi_jammer.core.interfaces import IAttackFactory, AttackType
 from wifi_jammer.attacks import (
-    DeauthAttack, DisassocAttack, BeaconFloodAttack,
-    AuthFloodAttack, AssocFloodAttack, ProbeResponseFloodAttack
+    DeauthAttack,
+    DisassocAttack,
+    BeaconFloodAttack,
+    AuthFloodAttack,
+    AssocFloodAttack,
+    ProbeResponseFloodAttack,
 )
 
 
-def _lazy_import_attack(module_name: str, class_name: str) -> Type[IAttackStrategy]:
+def _lazy_import_attack(module_name: str, class_name: str) -> "Type[IAttackStrategy]":
     """Lazily import an attack class by module and class name."""
     import importlib
+
     module = importlib.import_module(f"wifi_jammer.attacks.{module_name}")
-    return getattr(module, class_name)
+    attack_class = getattr(module, class_name)
+    from typing import cast
+
+    return cast("Type[IAttackStrategy]", attack_class)
 
 
 class AttackFactory(IAttackFactory):
     """Factory for creating attack strategy instances."""
-    
-    def __init__(self):
-        self._attack_classes: Dict[AttackType, Type[IAttackStrategy]] = {
+
+    def __init__(self) -> None:
+        self._attack_classes: "Dict[AttackType, Type[IAttackStrategy]]" = {
             AttackType.DEAUTH: DeauthAttack,
             AttackType.DISASSOC: DisassocAttack,
             AttackType.BEACON_FLOOD: BeaconFloodAttack,
@@ -35,8 +47,8 @@ class AttackFactory(IAttackFactory):
             AttackType.EVIL_TWIN: ("evil_twin_attack", "EvilTwinAttack"),
             AttackType.NETCUT: ("netcut_attack", "NetcutAttack"),
         }
-    
-    def create_attack(self, attack_type: AttackType, logger=None) -> IAttackStrategy:
+
+    def create_attack(self, attack_type: AttackType) -> "IAttackStrategy":
         """Create an attack strategy instance."""
         if attack_type in self._attack_classes:
             attack_class = self._attack_classes[attack_type]
@@ -47,12 +59,14 @@ class AttackFactory(IAttackFactory):
         else:
             raise ValueError(f"Unknown attack type: {attack_type}")
 
-        return attack_class(logger=logger)
-    
-    def get_available_attacks(self) -> list:
+        return attack_class()
+
+    def get_available_attacks(self) -> List[AttackType]:
         """Get list of available attack types."""
         return list(set(self._attack_classes.keys()) | set(self._lazy_attacks.keys()))
-    
-    def register_attack(self, attack_type: AttackType, attack_class: Type[IAttackStrategy]):
+
+    def register_attack(
+        self, attack_type: AttackType, attack_class: "Type[IAttackStrategy]"
+    ) -> None:
         """Register a new attack type."""
-        self._attack_classes[attack_type] = attack_class 
+        self._attack_classes[attack_type] = attack_class

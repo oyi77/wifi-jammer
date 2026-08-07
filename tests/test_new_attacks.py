@@ -5,12 +5,12 @@ EvilTwinAttack, NetcutAttack.
 """
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
 import sys
 import os
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from wifi_jammer.core.interfaces import AttackType, AttackConfig
 from wifi_jammer.attacks.channel_hop_attack import ChannelHopAttack
@@ -68,7 +68,7 @@ class TestChannelHopAttack(unittest.TestCase):
         self.assertIsNotNone(packet)
         self.assertIsInstance(packet, Packet)
         packet_str = str(packet)
-        self.assertIn('Dot11Deauth', packet_str)
+        self.assertIn("Dot11Deauth", packet_str)
 
     def test_channel_hop_packet_no_target(self):
         """Test packet creation returns None when no target BSSID."""
@@ -83,7 +83,7 @@ class TestChannelHopAttack(unittest.TestCase):
         packet = self.attack._create_packet()
         self.assertIsNotNone(packet)
         packet_str = str(packet)
-        self.assertIn('ff:ff:ff:ff:ff:ff', packet_str)
+        self.assertIn("ff:ff:ff:ff:ff:ff", packet_str)
 
 
 class TestPmkidCaptureAttack(unittest.TestCase):
@@ -111,7 +111,7 @@ class TestPmkidCaptureAttack(unittest.TestCase):
         self.assertIsNotNone(packet)
         self.assertIsInstance(packet, Packet)
         packet_str = str(packet)
-        self.assertIn('Dot11AssoReq', packet_str)
+        self.assertIn("Dot11AssoReq", packet_str)
 
     def test_pmkid_capture_file_default(self):
         """Test default capture filename is pmkid_capture.pcap."""
@@ -133,7 +133,7 @@ class TestPmkidCaptureAttack(unittest.TestCase):
         packet = self.attack._create_packet()
         self.assertIsNotNone(packet)
         packet_str = str(packet)
-        self.assertIn('00:11:22:33:44:55', packet_str)
+        self.assertIn("00:11:22:33:44:55", packet_str)
 
 
 class TestEvilTwinAttack(unittest.TestCase):
@@ -165,7 +165,7 @@ class TestEvilTwinAttack(unittest.TestCase):
         self.assertEqual(self.attack._spoof_ssid, "FreeWiFi")
         packet = self.attack._create_beacon_packet()
         packet_str = str(packet)
-        self.assertIn('FreeWiFi', packet_str)
+        self.assertIn("FreeWiFi", packet_str)
 
     def test_evil_twin_beacon_packet(self):
         """Test beacon packet structure."""
@@ -174,8 +174,8 @@ class TestEvilTwinAttack(unittest.TestCase):
         self.assertIsNotNone(packet)
         self.assertIsInstance(packet, Packet)
         packet_str = str(packet)
-        self.assertIn('Dot11Beacon', packet_str)
-        self.assertIn('TestSpoof', packet_str)
+        self.assertIn("Dot11Beacon", packet_str)
+        self.assertIn("TestSpoof", packet_str)
 
     def test_evil_twin_beacon_uses_target_ssid(self):
         """Test beacon uses target SSID when no spoof SSID set."""
@@ -183,7 +183,7 @@ class TestEvilTwinAttack(unittest.TestCase):
         packet = self.attack._create_beacon_packet()
         self.assertIsNotNone(packet)
         packet_str = str(packet)
-        self.assertIn('TestNetwork', packet_str)
+        self.assertIn("TestNetwork", packet_str)
 
     def test_evil_twin_deauth_packet(self):
         """Test deauth packet creation."""
@@ -191,7 +191,7 @@ class TestEvilTwinAttack(unittest.TestCase):
         self.assertIsNotNone(packet)
         self.assertIsInstance(packet, Packet)
         packet_str = str(packet)
-        self.assertIn('Dot11Deauth', packet_str)
+        self.assertIn("Dot11Deauth", packet_str)
 
     def test_evil_twin_create_packet_returns_none(self):
         """Test _create_packet returns None (evil twin uses separate methods)."""
@@ -245,7 +245,7 @@ class TestNetcutAttack(unittest.TestCase):
         self.assertIsNotNone(packet)
         self.assertIsInstance(packet, Packet)
         packet_str = str(packet)
-        self.assertIn('Dot11Deauth', packet_str)
+        self.assertIn("Dot11Deauth", packet_str)
 
     def test_netcut_packet_no_clients(self):
         """Test packet creation returns None with no clients."""
@@ -292,5 +292,5 @@ class TestNetcutAttack(unittest.TestCase):
         self.assertEqual(self.attack._target_clients, [])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
