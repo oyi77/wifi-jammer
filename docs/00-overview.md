@@ -35,7 +35,7 @@ wifi_jammer/
 ├── core/             # Core interfaces and platform abstraction
 ├── factory/          # Attack factory pattern implementation
 ├── gui/              # PyQt6 GUI (optional)
-├── scanner/          # Network scanning (cross-platform)
+├── scanner/          # Network scanning — orchestrator + macOS/packet collaborators
 ├── tui.py            # Textual TUI
 └── utils/            # Utilities (logger, validators, crypto, etc.)
 ```

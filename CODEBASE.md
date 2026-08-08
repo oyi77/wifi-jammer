@@ -20,7 +20,7 @@ Educational WiFi security testing and penetration testing tool — supports 10 8
 |-----------|-------------|
 | `wifi_jammer/` | Main package — CLI, TUI, config manager |
 | `wifi_jammer/core/` | Interfaces and data structures (AttackType, AttackConfig, INetworkScanner, IAttackStrategy) |
-| `wifi_jammer/scanner/` | ScapyNetworkScanner — network and client discovery |
+| `wifi_jammer/scanner/` | Network scanning — orchestrator (network_scanner), macOS-only logic (macos_scanner), packet parsing (packet_processor), shared scan state (scan_state) |
 | `wifi_jammer/attacks/` | Attack implementations — base_attack, deauth, flood, channel_hop, pmkid_capture, evil_twin, netcut |
 | `wifi_jammer/factory/` | AttackFactory — strategy pattern for attack creation |
 | `wifi_jammer/gui/` | PyQt6 GUI — main_window, network_scanner_widget, attack_config_widget, progress_monitor_widget |
