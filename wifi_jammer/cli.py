@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
 Command-line interface for WiFi jamming tool.
+
+Responsibilities are split across modules:
+
+* ``cli.py`` — Click command wiring and the interactive session
+  coordinator (:class:`WiFiJammerCLI`).
+* ``cli_display.py`` — Rich rendering (:class:`AttackProgressDisplay`).
+* ``cli_launcher.py`` — GUI/TUI launch helpers shared by every command.
 """
 
 import sys
@@ -22,7 +29,6 @@ from rich.progress import (
 )
 from rich.prompt import Prompt, Confirm
 from rich.live import Live
-from rich.layout import Layout
 
 from wifi_jammer.core.interfaces import AttackType, AttackConfig, IAttackStrategy
 from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
@@ -38,6 +44,8 @@ from wifi_jammer.utils.validators import (
     is_valid_delay,
     validate_attack_config,
 )
+from wifi_jammer.cli_display import AttackProgressDisplay
+from wifi_jammer.cli_launcher import launch_gui, launch_tui
 
 if TYPE_CHECKING:
     from wifi_jammer.attacks.base_attack import AttackStats
@@ -46,73 +54,6 @@ if TYPE_CHECKING:
 
 # Setup warning suppression
 setup_warning_suppression()
-
-
-class AttackProgressDisplay:
-    """Real-time attack progress display."""
-
-    def __init__(self, console: Console):
-        self.console = console
-        self.layout = Layout()
-        self.layout.split_column(
-            Layout(name="header", size=3),
-            Layout(name="stats", size=8),
-            Layout(name="footer", size=3),
-        )
-
-        self.layout["header"].update(
-            Panel(
-                "[bold cyan]WiFi Jammer Attack in Progress[/bold cyan]\n"
-                "Press Ctrl+C to stop the attack",
-                style="cyan",
-            )
-        )
-
-        self.layout["footer"].update(
-            Panel("[yellow]Monitoring attack progress...[/yellow]", style="yellow")
-        )
-
-    def update_stats(self, stats: "AttackStats") -> None:
-        """Update the statistics display."""
-        duration = stats.duration
-        pps = stats.packets_per_second
-        success_rate = stats.success_rate
-
-        stats_text = f"""
-[bold]Attack Statistics:[/bold]
-
-[cyan]Packets Sent:[/cyan] {stats.packets_sent:,}
-[cyan]Packets Failed:[/cyan] {stats.packets_failed:,}
-[cyan]Success Rate:[/cyan] {success_rate:.1f}%
-[cyan]Packets/Second:[/cyan] {pps:.1f}
-[cyan]Duration:[/cyan] {duration:.1f}s
-
-[bold]Progress Bar:[/bold]
-"""
-
-        # Create progress bar
-        if stats.packets_sent > 0:
-            progress_bar = "█" * min(50, int(stats.packets_sent / 10)) + "░" * (
-                50 - min(50, int(stats.packets_sent / 10))
-            )
-            stats_text += (
-                f"[green]{progress_bar}[/green] {stats.packets_sent:,} packets"
-            )
-        else:
-            stats_text += "[red]No packets sent yet[/red]"
-
-        if stats.errors:
-            stats_text += "\n\n[red]Recent Errors:[/red]\n"
-            for error in stats.errors[-3:]:  # Show last 3 errors
-                stats_text += f"• {error}\n"
-
-        self.layout["stats"].update(
-            Panel(stats_text, title="Live Statistics", style="blue")
-        )
-
-    def get_layout(self) -> Layout:
-        """Get the current layout."""
-        return self.layout
 
 
 class WiFiJammerCLI:
@@ -543,55 +484,11 @@ def cli(ctx: click.Context, verbose: bool, gui: bool, tui: bool) -> None:
 
     # Launch GUI if requested (works standalone or with commands)
     if gui:
-        try:
-            from wifi_jammer.gui import launch_gui
-
-            sys.exit(launch_gui())
-        except ImportError as e:
-            console = Console()
-            console.print(
-                "[red]GUI not available. Install PyQt6:[/red] "
-                "[cyan]pip install PyQt6[/cyan]"
-            )
-            console.print(f"[red]Error: {e}[/red]")
-            sys.exit(1)
+        launch_gui()
 
     # Launch TUI if requested (works standalone or with commands)
     if tui:
-        try:
-            from wifi_jammer.tui import WiFiJammerApp
-            from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
-
-            # Get interface selection
-            platform_interface = PlatformInterfaceFactory.create()
-            wireless_interfaces = platform_interface.get_wireless_interfaces()
-            available_interfaces = [
-                iface.name
-                for iface in wireless_interfaces
-                if iface.status == "Available"
-            ]
-
-            if not available_interfaces:
-                console = Console()
-                console.print("[red]No available wireless interfaces found![/red]")
-                sys.exit(1)
-
-            # Use first available interface or let TUI handle selection
-            interface = available_interfaces[0] if available_interfaces else None
-            app = WiFiJammerApp(interface)
-            sys.exit(app.run())
-        except ImportError as e:
-            console = Console()
-            console.print(
-                "[red]TUI not available. Install textual:[/red] "
-                "[cyan]pip install textual[/cyan]"
-            )
-            console.print(f"[red]Error: {e}[/red]")
-            sys.exit(1)
-        except Exception as e:
-            console = Console()
-            console.print(f"[red]Error launching TUI: {e}[/red]")
-            sys.exit(1)
+        launch_tui()
 
     # If no command and no gui/tui flag, show help
     if ctx.invoked_subcommand is None:
@@ -614,56 +511,10 @@ def scan(
     """Scan for available WiFi networks."""
     # Check if GUI or TUI was requested (group level or command level)
     if ctx.obj.get("gui", False) or gui:
-        try:
-            from wifi_jammer.gui import launch_gui
-
-            sys.exit(launch_gui())
-        except ImportError as e:
-            console = Console()
-            console.print(
-                "[red]GUI not available. Install PyQt6:[/red] "
-                "[cyan]pip install PyQt6[/cyan]"
-            )
-            console.print(f"[red]Error: {e}[/red]")
-            sys.exit(1)
+        launch_gui()
 
     if ctx.obj.get("tui", False) or tui:
-        try:
-            from wifi_jammer.tui import WiFiJammerApp
-            from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
-
-            platform_interface = PlatformInterfaceFactory.create()
-            wireless_interfaces = platform_interface.get_wireless_interfaces()
-            available_interfaces = [
-                iface.name
-                for iface in wireless_interfaces
-                if iface.status == "Available"
-            ]
-
-            if not available_interfaces:
-                console = Console()
-                console.print("[red]No available wireless interfaces found![/red]")
-                sys.exit(1)
-
-            interface = (
-                interface
-                if interface
-                else (available_interfaces[0] if available_interfaces else None)
-            )
-            app = WiFiJammerApp(interface)
-            sys.exit(app.run())
-        except ImportError as e:
-            console = Console()
-            console.print(
-                "[red]TUI not available. Install textual:[/red] "
-                "[cyan]pip install textual[/cyan]"
-            )
-            console.print(f"[red]Error: {e}[/red]")
-            sys.exit(1)
-        except Exception as e:
-            console = Console()
-            console.print(f"[red]Error launching TUI: {e}[/red]")
-            sys.exit(1)
+        launch_tui(interface)
 
     cli_obj = WiFiJammerCLI()
 
@@ -727,55 +578,11 @@ def attack(
     """Launch attack on a WiFi network."""
     # Check if GUI was requested (group level or command level)
     if ctx.obj.get("gui", False) or gui:
-        try:
-            from wifi_jammer.gui import launch_gui
-
-            sys.exit(launch_gui())
-        except ImportError as e:
-            console = Console()
-            console.print(
-                "[red]GUI not available. Install PyQt6:[/red] "
-                "[cyan]pip install PyQt6[/cyan]"
-            )
-            console.print(f"[red]Error: {e}[/red]")
-            sys.exit(1)
+        launch_gui()
 
     # Check if TUI was requested (group level or command level)
     if ctx.obj.get("tui", False) or tui:
-        try:
-            from wifi_jammer.tui import WiFiJammerApp
-            from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
-
-            # Get interface selection
-            platform_interface = PlatformInterfaceFactory.create()
-            wireless_interfaces = platform_interface.get_wireless_interfaces()
-            available_interfaces = [
-                iface.name
-                for iface in wireless_interfaces
-                if iface.status == "Available"
-            ]
-
-            if not available_interfaces:
-                console = Console()
-                console.print("[red]No available wireless interfaces found![/red]")
-                sys.exit(1)
-
-            # Use provided interface or first available
-            selected_interface = interface if interface else available_interfaces[0]
-            app = WiFiJammerApp(selected_interface)
-            sys.exit(app.run())
-        except ImportError as e:
-            console = Console()
-            console.print(
-                "[red]TUI not available. Install textual:[/red] "
-                "[cyan]pip install textual[/cyan]"
-            )
-            console.print(f"[red]Error: {e}[/red]")
-            sys.exit(1)
-        except Exception as e:
-            console = Console()
-            console.print(f"[red]Error launching TUI: {e}[/red]")
-            sys.exit(1)
+        launch_tui(interface)
 
     cli_obj = WiFiJammerCLI()
 

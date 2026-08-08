@@ -31,7 +31,9 @@ The system follows a modular architecture with clear separation of concerns:
 ```
 wifi_jammer/
 ├── attacks/          # Attack implementations (deauth, flood, evil twin, etc.)
-├── cli.py            # Main CLI entry point
+├── cli.py            # Click CLI wiring + interactive session
+├── cli_display.py    # Rich attack progress display
+├── cli_launcher.py   # Shared GUI/TUI launch helpers
 ├── core/             # Core interfaces and platform abstraction
 ├── factory/          # Attack factory pattern implementation
 ├── gui/              # PyQt6 GUI (optional)

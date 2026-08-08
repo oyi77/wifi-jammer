@@ -34,7 +34,9 @@ Educational WiFi security testing and penetration testing tool — supports 10 8
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `wifi_jammer/cli.py` | Click CLI — scan, attack, configure commands |
+| `wifi_jammer/cli.py` | Click CLI wiring + interactive session (WiFiJammerCLI) |
+| `wifi_jammer/cli_display.py` | Rich attack progress display |
+| `wifi_jammer/cli_launcher.py` | Shared GUI/TUI launch helpers for all CLI commands |
 | `wifi_jammer/tui.py` | Textual TUI — interactive scanning and attack interface |
 | `wifi_jammer/core/interfaces.py` | AttackType enum, AttackConfig, interface definitions |
 | `wifi_jammer/core/platform_interface.py` | Platform abstraction (Linux/macOS/Windows) |
