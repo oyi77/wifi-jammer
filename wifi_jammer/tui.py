@@ -21,17 +21,13 @@ from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from textual.widgets import Label, Log, Button, Input
-    from wifi_jammer.core.interfaces import (
-        NetworkInfo,
-        AttackType,
-        AttackConfig,
-        IAttackStrategy,
-    )
-    from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
-    from wifi_jammer.scanner import ScapyNetworkScanner
-    from wifi_jammer.factory import AttackFactory
-    from wifi_jammer.utils import RichLogger
     from wifi_jammer.attacks.base_attack import AttackStats
+from wifi_jammer.core.interfaces import (
+    NetworkInfo,
+    AttackType,
+    AttackConfig,
+    IAttackStrategy,
+)
 from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
 from wifi_jammer.scanner import ScapyNetworkScanner
 from wifi_jammer.factory import AttackFactory
