@@ -5,7 +5,7 @@
 Educational WiFi security testing and penetration testing tool — supports 10 802.11 frame injection attack types (deauth, disassoc, beacon flood, auth flood, assoc flood, probe response, channel hop, PMKID capture, evil twin, netcut) with CLI, TUI, and GUI interfaces across Linux/macOS/Windows.
 
 ## Tech Stack
-- **Languages**: Python ≥ 3.9
+- **Languages**: Python ≥ 3.10
 - **Frameworks**: Click (CLI), Textual (TUI), PyQt6 (GUI)
 - **Key Libraries**: scapy (packet crafting), psutil, colorama, rich, click, pyyaml, cryptography. Optional extras: `textual` (TUI), `PyQt6` (GUI)
 

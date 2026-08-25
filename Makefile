@@ -121,33 +121,12 @@ install-from-source: ## Install directly from source
 
 quick-test: ## Quick test of core functionality
 	@echo "$(BLUE)Running quick functionality test...$(NC)"
-	$(PYTHON) -c "
-import wifi_jammer
-from wifi_jammer.core.interfaces import AttackType
-from wifi_jammer.factory import AttackFactory
-from wifi_jammer.utils import RichLogger
-
-print('✓ Core modules imported successfully')
-print('✓ Attack types available:', [at.value for at in AttackType])
-print('✓ Factory created successfully')
-print('✓ Logger created successfully')
-print('✓ Quick test passed!')
-"
-	@echo "$(GREEN)Quick test passed!$(NC)"
+	$(PYTHON) -c "import wifi_jammer; from wifi_jammer.core.interfaces import AttackType; from wifi_jammer.factory import AttackFactory; from wifi_jammer.utils import RichLogger; print('OK: core modules import'); print('OK: attacks:', [at.value for at in AttackType])"
 
 security-check: ## Run security and safety checks
 	@echo "$(BLUE)Running security checks...$(NC)"
-	@echo "$(YELLOW)Checking for security warnings...$(NC)"
-	$(PYTHON) -c "
-import warnings
-warnings.filterwarnings('error')
-try:
-    import wifi_jammer
-    print('✓ No security warnings detected')
-except Exception as e:
-    print(f'⚠️  Security warning: {e}')
-"
-	@echo "$(GREEN)Security check complete!$(NC)"
+	@echo "$(YELLOW)Importing package with warnings as errors...$(NC)"
+	$(PYTHON) -W error -c "import wifi_jammer; print('OK: imports clean under -W error')"
 
 docs: ## Generate documentation
 	@echo "$(BLUE)Generating documentation...$(NC)"

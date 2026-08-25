@@ -1,6 +1,6 @@
 # WiFi Jammer — Advanced WiFi Security Testing Tool | Python 802.11 Frame Injection
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-purple.svg)](https://oyi77.github.io/wifi-jammer/)
 
