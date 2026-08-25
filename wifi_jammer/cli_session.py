@@ -38,7 +38,7 @@ from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
 from wifi_jammer.scanner import ScapyNetworkScanner
 from wifi_jammer.factory import AttackFactory
 from wifi_jammer.utils import RichLogger
-from wifi_jammer.utils.platform_utils import is_windows
+from wifi_jammer.utils.platform_utils import is_windows, get_own_mac
 from wifi_jammer.cli_display import AttackProgressDisplay
 
 
@@ -265,24 +265,7 @@ class WiFiJammerCLI:
         duration: int = 30,
     ) -> Tuple[Dict[str, float], Optional[str]]:
         """Discover clients connected to the AP."""
-        # Get user's MAC to exclude
-        import subprocess
-        import re
-
-        try:
-            result = subprocess.run(
-                ["ifconfig", interface], capture_output=True, text=True, timeout=5
-            )
-            mac_match = re.search(r"ether\s+([0-9a-fA-F:]+)", result.stdout)
-            my_mac = mac_match.group(1) if mac_match else None
-        except (
-            subprocess.TimeoutExpired,
-            subprocess.CalledProcessError,
-            FileNotFoundError,
-            OSError,
-            AttributeError,
-        ):
-            my_mac = None
+        my_mac = get_own_mac(interface)
 
         # Use scanner's client scanning method
         with Progress(

@@ -7,6 +7,8 @@ import platform
 import shutil
 import os
 import sys
+import re
+import subprocess
 from typing import Optional, List, Tuple, Dict
 from enum import Enum
 
@@ -317,3 +319,19 @@ def format_platform_info() -> str:
     info += f"Root/Admin: {'Yes' if root_status else 'No'} ({msg})\n"
 
     return info
+
+
+def get_own_mac(interface: str) -> Optional[str]:
+    """Best-effort local MAC address lookup across iproute2/ifconfig."""
+    for cmd in (["ip", "link", "show", interface], ["ifconfig", interface]):
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if result.returncode == 0:
+            match = re.search(
+                r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})", result.stdout
+            )
+            if match:
+                return match.group(1)
+    return None
