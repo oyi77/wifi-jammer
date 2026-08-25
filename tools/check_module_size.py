@@ -15,9 +15,7 @@ from pathlib import Path
 HARD_LIMIT = 900
 
 # rel-path -> frozen maximum while split debt is pending (delete entry once fixed)
-KNOWN_OFFENDERS: dict = {
-    "wifi_jammer/scanner/macos_scanner.py": 1300,
-}
+KNOWN_OFFENDERS: dict = {}
 
 
 def main() -> int:
@@ -52,9 +50,9 @@ def main() -> int:
     for rel in sorted(KNOWN_OFFENDERS):
         path = Path(rel)
         if path.exists():
-            lines = len(path.read_text(encoding="utf-8").splitlines())
-            marker = "OK" if lines <= args.limit else "DEBT"
-            print(f"{marker} {rel}: {lines} lines (tracked debt, frozen at "
+            n = len(path.read_text(encoding="utf-8").splitlines())
+            marker = "OK" if n <= args.limit else "DEBT"
+            print(f"{marker} {rel}: {n} lines (tracked debt, frozen at "
                   f"{KNOWN_OFFENDERS[rel]})")
         else:
             del KNOWN_OFFENDERS[rel]

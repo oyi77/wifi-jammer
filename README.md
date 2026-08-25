@@ -124,7 +124,13 @@ wifi_jammer/
 │   ├── interfaces.py              # AttackType, AttackConfig, INetworkScanner, IAttackStrategy
 │   └── platform_interface.py      # Platform abstraction (Linux/macOS/Windows)
 ├── scanner/
-│   └── network_scanner.py         # ScapyNetworkScanner — network and client discovery
+│   ├── network_scanner.py         # ScapyNetworkScanner — orchestration + platform dispatch
+│   ├── macos_permissions.py       # macOS Location Services permission handling
+│   ├── macos_corewlan.py          # macOS CoreWLAN-framework scanning
+│   ├── macos_systools.py          # wdutil/airport/system_profiler scanning+parsing
+│   ├── macos_current_network.py   # current-network discovery via system tools
+│   ├── packet_processor.py        # 802.11 frame parsing
+│   └── scan_state.py              # shared scan results + lock
 ├── attacks/
 │   ├── base_attack.py             # BaseAttack — shared attack logic, stats tracking
 │   ├── deauth_attack.py           # DeauthAttack, DisassocAttack
