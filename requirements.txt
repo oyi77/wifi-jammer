@@ -1,3 +1,6 @@
+# Core runtime dependencies (CLI). Optional surfaces:
+#   TUI: pip install 'wifi-jammer[tui]'   (textual)
+#   GUI: pip install 'wifi-jammer[gui]'   (PyQt6)
 scapy>=2.6.1
 psutil
 colorama
@@ -5,5 +8,3 @@ rich
 click
 pyyaml
 cryptography>=45.0.6
-textual
-PyQt6>=6.6.0

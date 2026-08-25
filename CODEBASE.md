@@ -7,7 +7,7 @@ Educational WiFi security testing and penetration testing tool — supports 10 8
 ## Tech Stack
 - **Languages**: Python ≥ 3.9
 - **Frameworks**: Click (CLI), Textual (TUI), PyQt6 (GUI)
-- **Key Libraries**: scapy (packet crafting), psutil, colorama, rich, click, pyyaml, cryptography, textual, PyQt6
+- **Key Libraries**: scapy (packet crafting), psutil, colorama, rich, click, pyyaml, cryptography. Optional extras: `textual` (TUI), `PyQt6` (GUI)
 
 ## Entry Points
 - **CLI**: `wifi_jammer/cli.py` (Click-based, installed as `wifi-jammer`)
@@ -34,7 +34,8 @@ Educational WiFi security testing and penetration testing tool — supports 10 8
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `wifi_jammer/cli.py` | Click CLI wiring + interactive session (WiFiJammerCLI) |
+| `wifi_jammer/cli.py` | Click CLI wiring |
+| `wifi_jammer/cli_session.py` | Interactive session coordinator (WiFiJammerCLI) |
 | `wifi_jammer/cli_display.py` | Rich attack progress display |
 | `wifi_jammer/cli_launcher.py` | Shared GUI/TUI launch helpers for all CLI commands |
 | `wifi_jammer/tui.py` | Textual TUI — interactive scanning and attack interface |
@@ -51,7 +52,8 @@ SOLID architecture with clear separation of concerns. **Strategy pattern**: each
 
 ## Run Commands
 ```bash
-pip install -e .                    # Install in editable mode
+pip install -e .                    # Core CLI install
+pip install -e '.[gui,tui]'         # + GUI/TUI surfaces
 sudo wifi-jammer scan -i wlan0      # Scan networks
 sudo wifi-jammer attack -i wlan0 -t AA:BB:CC:DD:EE:FF -a deauth  # Targeted attack
 sudo wifi-jammer --tui              # Terminal UI

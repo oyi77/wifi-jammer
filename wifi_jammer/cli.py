@@ -65,7 +65,7 @@ setup_warning_suppression()
 @click.option("--tui", is_flag=True, help="Launch modern TUI")
 @click.pass_context
 def cli(ctx: click.Context, verbose: bool, gui: bool, tui: bool) -> None:
-    """Advanced WiFi Jamming Tool - By Paijo"""
+    """Advanced WiFi Jamming Tool."""
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
     ctx.obj["tui"] = tui

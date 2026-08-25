@@ -78,7 +78,7 @@ run: ## Run the tool in interactive mode
 
 run-scan: ## Run the tool in scan-only mode
 	@echo "$(BLUE)Starting WiFi Jammer Tool in scan mode...$(NC)"
-	$(PYTHON) -m wifi_jammer.cli --scan-only
+	$(PYTHON) -m wifi_jammer.cli scan
 
 clean: ## Clean build artifacts and cache
 	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
@@ -180,9 +180,6 @@ docker-run: ## Run in Docker (privileged, host network)
 	docker run --rm --net=host --privileged wifi-jammer
 
 # Release targets
-release: clean test build ## Run tests, build package
-	@echo "$(GREEN)Ready to release! Run: make publish$(NC)"
-
 publish: ## Publish to PyPI (requires credentials)
 	$(PYTHON) -m twine upload dist/*
 
@@ -205,7 +202,6 @@ bump: ## Bump version (usage: make bump V=2.1.0)
 	@if [ -z "$(V)" ]; then echo "$(RED)Usage: make bump V=x.y.z$(NC)"; exit 1; fi
 	@echo "$(BLUE)Bumping version to $(V)...$(NC)"
 	@sed -i 's/^version = .*/version = "$(V)"/' pyproject.toml
-	@sed -i 's/^    version=".*"/    version="$(V)"/' setup.py
-	@sed -i 's/^VERSION = .*/VERSION = $(V)/' Makefile
+		@sed -i 's/^VERSION = .*/VERSION = $(V)/' Makefile
 	@echo "$(GREEN)Version bumped to $(V)$(NC)"
 	@echo "$(YELLOW)Run: git add -A && git commit -m 'bump: v$(V)' && git tag v$(V) && git push --tags$(NC)"

@@ -1,6 +1,6 @@
 # WiFi Jammer — Advanced WiFi Security Testing Tool | Python 802.11 Frame Injection
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-purple.svg)](https://oyi77.github.io/wifi-jammer/)
 
@@ -21,6 +21,9 @@ WiFi Jammer is an educational Python tool for WiFi security testing and penetrat
 - Client discovery with selective device kicking (NetCut-style)
 
 **User Interfaces**
+
+Optional installs: `pip install 'wifi-jammer[tui]'` for the terminal UI,
+`pip install 'wifi-jammer[gui]'` for the Qt GUI.
 - Rich CLI with progress bars, tables, and interactive prompts
 - Modern TUI built with Textual
 - Cross-platform Qt GUI built with PyQt6 (Linux, macOS, Windows)
