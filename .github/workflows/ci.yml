@@ -31,21 +31,23 @@ jobs:
 
     - name: Lint with ruff
       run: ruff check wifi_jammer/ --select E9,F63,F7,F82 --ignore E501
+    - name: Enforce module-size ratchet
+      run: python tools/check_module_size.py --limit 900
 
     - name: Type check with mypy
       run: |
         pip install mypy
         mypy --strict wifi_jammer/
 
-    - name: Security audit with pip-audit
+    - name: Security audit with pip-audit (advisory here; blocking gate is the scheduled 'security' job)
+      continue-on-error: true
       run: |
         pip install pip-audit
-        pip-audit --desc --format=json --output=pip-audit.json || true
+        pip-audit --desc --format=json --output=pip-audit.json
 
     - name: Run tests with coverage
       run: |
-        pytest tests/ -v --tb=short --cov=wifi_jammer --cov-report=term-missing --cov-report=xml --cov-fail-under=29
-
+        pytest tests/ -v --tb=short --cov=wifi_jammer --cov-report=term-missing --cov-report=xml --cov-fail-under=32
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
       with:

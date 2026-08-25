@@ -53,6 +53,8 @@ lint: ## Run linting checks
 	$(PIP) install flake8 black isort
 	@echo "$(YELLOW)Running flake8...$(NC)"
 	flake8 wifi_jammer/ tests/ --max-line-length=88 --ignore=E203,W503
+	@echo "$(YELLOW)Checking module sizes...$(NC)"
+	$(PYTHON) tools/check_module_size.py --limit 900
 	@echo "$(YELLOW)Running black check...$(NC)"
 	black --check wifi_jammer/ tests/
 	@echo "$(YELLOW)Running isort check...$(NC)"
