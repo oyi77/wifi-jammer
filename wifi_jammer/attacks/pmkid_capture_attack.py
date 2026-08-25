@@ -57,7 +57,6 @@ class PmkidCaptureAttack(BaseAttack):
         """Sniff EAPOL packets and extract PMKID."""
         if not self._config:
             return
-        return
         bpf_filter = f"ether src {self._config.target_bssid} and eapol"
 
         while self._running:

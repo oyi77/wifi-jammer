@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from scapy.packet import Packet
 from scapy.sendrecv import sendp
 from wifi_jammer.core.interfaces import IAttackStrategy, AttackConfig
+from wifi_jammer.config import get_config_value
 from wifi_jammer.utils.logger import RichLogger
 from wifi_jammer.utils.validators import validate_attack_config
 from wifi_jammer.core.platform_interface import PlatformInterfaceFactory
@@ -330,9 +331,10 @@ class BaseAttack(IAttackStrategy, ABC):
                         self.logger.warning("Failed to create packet")
                         self._stats.packets_failed += 1
 
-                    # Delay between packets
-                    if self._config is not None:
-                        time.sleep(self._config.delay)
+                    # Delay between packets, honoring the configured rate ceiling
+                    # (ToolConfig.rate_limit_enabled / max_packets_per_second)
+                    requested = self._config.delay if self._config else 0.1
+                    time.sleep(self._effective_delay(requested))
 
                 except (KeyboardInterrupt, SystemExit):
                     # Allow clean exit on interrupt
@@ -398,6 +400,20 @@ class BaseAttack(IAttackStrategy, ABC):
     def _set_channel(self, interface: str, channel: int) -> bool:
         """Set interface channel."""
         return self._platform_interface.set_channel(interface, channel)
+
+    def _effective_delay(self, requested_delay: float) -> float:
+        """Delay actually slept between packets after applying the configured
+        packet-rate ceiling from ToolConfig (rate_limit_enabled,
+        max_packets_per_second)."""
+        if not get_config_value("rate_limit_enabled", True):
+            return requested_delay
+        try:
+            max_pps = int(get_config_value("max_packets_per_second", 1000) or 1000)
+        except (TypeError, ValueError):
+            max_pps = 1000
+        if max_pps <= 0:
+            return requested_delay
+        return max(requested_delay, 1.0 / max_pps)
 
     def _get_random_mac(self) -> str:
         """Generate a random MAC address."""

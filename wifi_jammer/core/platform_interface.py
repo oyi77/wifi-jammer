@@ -171,8 +171,14 @@ class LinuxInterface(IPlatformInterface):
             mac_match = re.search(r"link/ether\s+([0-9a-fA-F:]+)", result.stdout)
             mac_address = mac_match.group(1) if mac_match else "Unknown"
 
-            # Check if wireless
-            is_wireless = interface_name.startswith(("wlan", "wifi", "ath"))
+            # Check if wireless: trust sysfs first (covers systemd predictable
+            # names like wlp3s0), fall back to common name prefixes when the
+            # sysfs entries are unavailable (containers, unusual kernels)
+            is_wireless = (
+                os.path.isdir(f"/sys/class/net/{interface_name}/wireless")
+                or os.path.isdir(f"/sys/class/net/{interface_name}/phy80211")
+                or interface_name.startswith(("wlan", "wifi", "ath", "wlp"))
+            )
 
             # Check monitor mode capability
             is_monitor_capable = is_wireless

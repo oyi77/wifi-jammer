@@ -12,7 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from wifi_jammer.cli import WiFiJammerCLI, AttackProgressDisplay
-from wifi_jammer.core.interfaces import NetworkInfo, AttackType
+from wifi_jammer.core.interfaces import NetworkInfo, AttackType, AttackConfig
 
 
 class TestAttackProgressDisplay(unittest.TestCase):
@@ -246,3 +246,90 @@ class TestWiFiJammerCLI(unittest.TestCase):
         with patch("os.geteuid", return_value=1000):
             result = self.cli.check_root()
             self.assertFalse(result)
+
+    def test_interactive_answers_survive_cli_defaults(self):
+        """Regression: interactive count/delay answers must not be clobbered.
+
+        Click options previously defaulted to 0 / 0.1 (never None), so the
+        `if count is not None` override always fired and silently replaced the
+        user's prompted packet count (e.g. 500 -> 0 = unlimited) and delay.
+        """
+        from click.testing import CliRunner
+        from wifi_jammer.cli import cli as cli_group
+
+        runner = CliRunner()
+        with (
+            patch("wifi_jammer.cli.WiFiJammerCLI") as mock_cli_cls,
+            patch("wifi_jammer.cli.Prompt.ask", return_value="wlan0"),
+        ):
+            inst = mock_cli_cls.return_value
+            network = NetworkInfo("Net", "00:11:22:33:44:55", 6, -50, "WPA2")
+            inst.list_interfaces.return_value = ["wlan0"]
+            inst.scan_networks.return_value = [network]
+            inst.select_network.return_value = network
+            inst.select_attack.return_value = AttackType.DEAUTH
+            config = AttackConfig(
+                attack_type=AttackType.DEAUTH,
+                target_bssid="00:11:22:33:44:55",
+                interface="wlan0",
+                channel=6,
+            )
+            config.count = 500  # user's interactive answer
+            config.delay = 0.5  # user's interactive answer
+            inst.configure_attack.return_value = config
+
+            # First Confirm = client discovery (decline), second = launch
+            # confirmation gate (accept) added with require_confirmation wiring
+            with patch(
+                "wifi_jammer.cli.Confirm.ask", side_effect=[False, True]
+            ):
+                result = runner.invoke(cli_group, ["attack"])
+
+            self.assertEqual(result.exit_code, 0, result.output)
+            self.assertEqual(config.count, 500)
+            self.assertEqual(config.delay, 0.5)
+            inst.start_attack.assert_called_once_with(config)
+
+    def _invoke_direct_attack(self, confirm_answer, require_confirmation=True):
+        """Run `attack -t ...` with the confirmation flow controlled."""
+        from click.testing import CliRunner
+        from wifi_jammer.cli import cli as cli_group
+
+        runner = CliRunner()
+
+        def cfg(key, default=None):
+            if key == "require_confirmation":
+                return require_confirmation
+            return default
+
+        with (
+            patch("wifi_jammer.cli.WiFiJammerCLI") as mock_cli_cls,
+            patch("wifi_jammer.cli.get_config_value", side_effect=cfg),
+            patch("wifi_jammer.cli.Confirm.ask", return_value=confirm_answer) as mock_confirm,
+        ):
+            inst = mock_cli_cls.return_value
+            inst.list_interfaces.return_value = ["wlan0"]
+            result = runner.invoke(
+                cli_group,
+                ["attack", "-i", "wlan0", "-t", "00:11:22:33:44:55", "-a", "deauth"],
+            )
+        return result, inst, mock_confirm
+
+    def test_confirmation_declined_blocks_attack(self):
+        """ToolConfig.require_confirmation must gate the CLI attack launch."""
+        result, inst, _ = self._invoke_direct_attack(confirm_answer=False)
+        self.assertEqual(result.exit_code, 0, result.output)
+        inst.start_attack.assert_not_called()
+
+    def test_confirmation_accepted_launches_attack(self):
+        result, inst, _ = self._invoke_direct_attack(confirm_answer=True)
+        self.assertEqual(result.exit_code, 0, result.output)
+        inst.start_attack.assert_called_once()
+
+    def test_confirmation_disabled_skips_prompt(self):
+        result, inst, mock_confirm = self._invoke_direct_attack(
+            confirm_answer=False, require_confirmation=False
+        )
+        self.assertEqual(result.exit_code, 0, result.output)
+        mock_confirm.assert_not_called()
+        inst.start_attack.assert_called_once()

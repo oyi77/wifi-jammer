@@ -5,7 +5,7 @@ EvilTwinAttack, NetcutAttack.
 """
 
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import sys
 import os
 
@@ -134,6 +134,29 @@ class TestPmkidCaptureAttack(unittest.TestCase):
         self.assertIsNotNone(packet)
         packet_str = str(packet)
         self.assertIn("00:11:22:33:44:55", packet_str)
+
+    def test_pmkid_sniffer_actually_starts(self):
+        """Regression: _sniff_packets must invoke scapy sniff with the AP filter.
+
+        The sniff loop was previously unreachable behind a stray bare `return`,
+        so PMKID capture never captured anything.
+        """
+
+        def _stop_after_first_call(*args, **kwargs):
+            self.attack._running = False
+            return []
+
+        self.attack._running = True
+        with patch(
+            "wifi_jammer.attacks.pmkid_capture_attack.sniff",
+            side_effect=_stop_after_first_call,
+        ) as mock_sniff:
+            self.attack._sniff_packets()
+
+        mock_sniff.assert_called_once()
+        call_kwargs = mock_sniff.call_args.kwargs
+        self.assertIn("00:11:22:33:44:55", call_kwargs["filter"])
+        self.assertIn("eapol", call_kwargs["filter"])
 
 
 class TestEvilTwinAttack(unittest.TestCase):

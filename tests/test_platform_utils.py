@@ -4,9 +4,9 @@ Tests for platform utilities.
 """
 
 import unittest
-from unittest.mock import patch
 import sys
 import os
+from unittest.mock import Mock, patch
 
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -352,6 +352,50 @@ class TestPlatformInfo(unittest.TestCase):
         self.assertIn("Platform", info)
         self.assertIn("System", info)
         self.assertIn("Linux", info)
+
+
+class TestLinuxWirelessDetection(unittest.TestCase):
+    """Regression: wireless detection must cover systemd predictable names."""
+
+    def _info(self, name, isdir_map):
+        from wifi_jammer.core.platform_interface import LinuxInterface
+
+        def fake_isdir(path):
+            return isdir_map.get(path, False)
+
+        proc = Mock()
+        proc.returncode = 0
+        proc.stdout = (
+            f"3: {name}: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc "
+            f"state UP link/ether aa:bb:cc:dd:ee:ff brd ff:ff:ff:ff:ff:ff"
+        )
+        with (
+            patch("os.path.isdir", side_effect=fake_isdir),
+            patch("subprocess.run", return_value=proc),
+        ):
+            return LinuxInterface().get_interface_info(name)
+
+    def test_wlp_systemd_name_detected_via_phy80211(self):
+        """Default Ubuntu/Fedora naming was previously classified as Ethernet."""
+        info = self._info("wlp3s0", {"/sys/class/net/wlp3s0/phy80211": True})
+        self.assertIsNotNone(info)
+        self.assertTrue(info.is_wireless)
+        self.assertTrue(info.is_monitor_capable)
+        self.assertEqual(info.type, "Wireless")
+
+    def test_sysfs_wireless_dir_detected(self):
+        """Non-prefixed names with /sys/class/net/<if>/wireless are wireless."""
+        info = self._info("radio0", {"/sys/class/net/radio0/wireless": True})
+        self.assertTrue(info.is_wireless)
+
+    def test_ethernet_stays_non_wireless(self):
+        info = self._info("eth0", {})
+        self.assertFalse(info.is_wireless)
+        self.assertEqual(info.type, "Ethernet")
+
+    def test_classic_prefix_fallback_without_sysfs(self):
+        info = self._info("wlan0", {})
+        self.assertTrue(info.is_wireless)
 
 
 if __name__ == "__main__":

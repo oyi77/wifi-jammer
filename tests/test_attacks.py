@@ -132,5 +132,56 @@ class TestFloodAttacks(unittest.TestCase):
         self.assertIn("Dot11Beacon", packet_str)
 
 
+class TestRateLimiting(unittest.TestCase):
+    """ToolConfig packet-rate ceiling is enforced by BaseAttack."""
+
+    def setUp(self):
+        self.mock_logger = Mock(spec=RichLogger)
+        self.attack = DeauthAttack(self.mock_logger)
+
+    @staticmethod
+    def _config_values(enabled, max_pps):
+        def fake_get(key, default=None):
+            if key == "rate_limit_enabled":
+                return enabled
+            if key == "max_packets_per_second":
+                return max_pps
+            return default
+
+        return fake_get
+
+    def test_ceiling_raises_delay_above_rate(self):
+        """max_pps=10 forces >= 0.1s between packets even if user asked 0."""
+        values = self._config_values(True, 10)
+        with patch(
+            "wifi_jammer.attacks.base_attack.get_config_value",
+            side_effect=values,
+        ):
+            self.assertAlmostEqual(self.attack._effective_delay(0.0), 0.1)
+
+    def test_disabled_limiter_is_passthrough(self):
+        values = self._config_values(False, 10)
+        with patch(
+            "wifi_jammer.attacks.base_attack.get_config_value",
+            side_effect=values,
+        ):
+            self.assertEqual(self.attack._effective_delay(0.02), 0.02)
+
+    def test_user_delay_kept_when_above_ceiling(self):
+        values = self._config_values(True, 1000)
+        with patch(
+            "wifi_jammer.attacks.base_attack.get_config_value",
+            side_effect=values,
+        ):
+            self.assertEqual(self.attack._effective_delay(0.5), 0.5)
+
+    def test_invalid_max_pps_uses_default_ceiling(self):
+        values = self._config_values(True, "not-a-number")
+        with patch(
+            "wifi_jammer.attacks.base_attack.get_config_value",
+            side_effect=values,
+        ):
+            self.assertAlmostEqual(self.attack._effective_delay(0.0), 0.001)
+
 if __name__ == "__main__":
     unittest.main()

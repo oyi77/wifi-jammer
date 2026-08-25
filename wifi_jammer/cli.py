@@ -37,6 +37,7 @@ from wifi_jammer.factory import AttackFactory
 from wifi_jammer.utils import RichLogger
 from wifi_jammer.utils.warning_suppressor import setup_warning_suppression
 from wifi_jammer.utils.platform_utils import is_windows
+from wifi_jammer.config import get_config_value
 from wifi_jammer.utils.validators import (
     is_valid_interface_name,
     is_valid_channel,
@@ -557,9 +558,19 @@ def scan(
     help="Attack type",
 )
 @click.option(
-    "--count", "-c", default=0, help="Number of packets to send (0 for unlimited)"
+    "--count",
+    "-c",
+    type=int,
+    default=None,
+    help="Number of packets to send (0 for unlimited); keeps prompted value when omitted",
 )
-@click.option("--delay", "-d", default=0.1, help="Delay between packets in seconds")
+@click.option(
+    "--delay",
+    "-d",
+    type=float,
+    default=None,
+    help="Delay between packets in seconds; keeps prompted value when omitted",
+)
 @click.option("--channel", "-ch", type=int, help="Channel to use")
 @click.option("--gui", is_flag=True, help="Launch Qt GUI")
 @click.option("--tui", is_flag=True, help="Launch modern TUI")
@@ -569,8 +580,8 @@ def attack(
     interface: Optional[str],
     target: Optional[str],
     attack: Optional[str],
-    count: int,
-    delay: float,
+    count: Optional[int],
+    delay: Optional[float],
     channel: Optional[int],
     gui: bool,
     tui: bool,
@@ -638,12 +649,13 @@ def attack(
                 )
                 return
 
-            # Validate count and delay
-            if not is_valid_packet_count(count):
+            # Validate count and delay (None = not provided on the command line;
+            # interactive prompt answers must survive untouched)
+            if count is not None and not is_valid_packet_count(count):
                 cli_obj.logger.error(f"Invalid packet count: {count}. Must be >= 0")
                 return
 
-            if not is_valid_delay(delay):
+            if delay is not None and not is_valid_delay(delay):
                 cli_obj.logger.error(
                     f"Invalid delay: {delay}. Must be between 0.0 and 60.0 seconds"
                 )
@@ -656,8 +668,8 @@ def attack(
                 target_ssid="",  # Not provided via CLI
                 interface=interface,
                 channel=channel if channel else 0,
-                count=count,
-                delay=delay,
+                count=count if count is not None else 0,
+                delay=delay if delay is not None else 0.1,
                 source_mac="",  # Will be random if not provided
                 verbose=ctx.obj.get("verbose", False),
             )
@@ -744,6 +756,15 @@ def attack(
                         if not continue_attack:
                             return
 
+        # Safety gate: ToolConfig.require_confirmation (TUI/GUI launches are
+        # explicit button gestures; the CLI needs an explicit confirm here)
+        if get_config_value("require_confirmation", True):
+            if not Confirm.ask(
+                "[bold red]Launch this attack now?[/bold red]", default=False
+            ):
+                cli_obj.logger.info("Attack cancelled by user")
+                return
+
         # Start attack
         cli_obj.start_attack(config)
 
@@ -756,7 +777,6 @@ def attack(
 def main() -> None:
     """Main entry point for CLI."""
     cli()
-
 
 if __name__ == "__main__":
     main()

@@ -61,5 +61,9 @@ make lint                           # Lint with flake8
 make format                         # Format with black + isort
 ```
 
-## Environment Variables
-No environment variables required. Configuration via YAML config file managed by `ConfigManager`.
+## Configuration
+No environment variables required. Configuration via YAML config file managed by
+`ConfigManager` (`~/.wifi_jammer/config.yaml`). Enforced security settings:
+`rate_limit_enabled` + `max_packets_per_second` cap the attack loop's packet rate
+(via `BaseAttack._effective_delay`); `require_confirmation` makes the CLI ask
+before launching an attack (TUI/GUI launches are explicit button gestures).
