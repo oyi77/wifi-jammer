@@ -8,7 +8,6 @@ from .interfaces import (
     AttackConfig,
     INetworkScanner,
     IAttackStrategy,
-    IMonitor,
     ILogger,
     IConfigManager,
     IAttackFactory,
@@ -20,8 +19,7 @@ __all__ = [
     "AttackConfig",
     "INetworkScanner",
     "IAttackStrategy",
-    "IMonitor",
-    "ILogger",
+        "ILogger",
     "IConfigManager",
     "IAttackFactory",
 ]

@@ -199,4 +199,3 @@ sequenceDiagram
 2. **Custom Platforms**: Implement `IPlatformInterface`
 3. **Custom Loggers**: Implement `ILogger` interface
 4. **Custom Scanners**: Implement `INetworkScanner` interface
-5. **Custom Monitors**: Implement `IMonitor` interface

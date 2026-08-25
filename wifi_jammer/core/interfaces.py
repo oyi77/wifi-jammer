@@ -143,20 +143,6 @@ class IAttackStrategy(ABC):
         ...
 
 
-class IMonitor(ABC):
-    """Interface for monitoring functionality."""
-
-    @abstractmethod
-    def start_monitoring(self, interface: str, callback: Callable[[Any], None]) -> None:
-        """Start monitoring network traffic."""
-        ...
-
-    @abstractmethod
-    def stop_monitoring(self) -> None:
-        """Stop monitoring."""
-        ...
-
-
 class ILogger(ABC):
     """Interface for logging functionality."""
 

@@ -73,7 +73,6 @@ graph TB
 | `IAttackFactory` | Dynamic attack creation | `AttackFactory` |
 | `ILogger` | Structured logging | `RichLogger` |
 | `IConfigManager` | Configuration management | `ConfigManager` |
-| `IMonitor` | Network monitoring | (planned) |
 
 ## Attack Strategy Pattern
 
@@ -194,7 +193,6 @@ Configuration via `AttackConfig` dataclass:
 2. **New Platforms**: Implement `IPlatformInterface`, register with `PlatformInterfaceFactory`
 3. **New Loggers**: Implement `ILogger`
 4. **New Scanners**: Implement `INetworkScanner`
-5. **New Monitors**: Implement `IMonitor`
 
 ## Security Considerations
 
