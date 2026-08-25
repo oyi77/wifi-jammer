@@ -13,7 +13,13 @@ from wifi_jammer.core.interfaces import ILogger
 
 
 class RichLogger(ILogger):
-    """Rich console logger implementation."""
+    """Rich console logger implementation.
+
+    Only one RichHandler is attached per process even when multiple
+    RichLogger instances are created — previously every instance added
+    another handler to the shared ``wifi_jammer`` logger, duplicating
+    each record once per instance.
+    """
 
     def __init__(
         self, level: str = "INFO", log_file: Optional[str] = None, quiet: bool = False
@@ -33,23 +39,27 @@ class RichLogger(ILogger):
 
         self.logger = logging.getLogger("wifi_jammer")
         self.logger.setLevel(getattr(logging, level.upper()))
+        self.logger.propagate = False
 
-        # Rich handler for console output
-        rich_handler = RichHandler(
-            console=self.console, show_time=True, show_path=False, markup=True
-        )
-        rich_handler.setFormatter(logging.Formatter("%(message)s"))
-        self.logger.addHandler(rich_handler)
-
-        # File handler if specified
-        if log_file:
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-                )
+        if not any(isinstance(h, RichHandler) for h in self.logger.handlers):
+            rich_handler = RichHandler(
+                console=self.console, show_time=True, show_path=False, markup=True
             )
-            self.logger.addHandler(file_handler)
+            rich_handler.setFormatter(logging.Formatter("%(message)s"))
+            self.logger.addHandler(rich_handler)
+
+        if log_file:
+            has_file_handler = any(
+                isinstance(h, logging.FileHandler) for h in self.logger.handlers
+            )
+            if not has_file_handler:
+                file_handler = logging.FileHandler(log_file)
+                file_handler.setFormatter(
+                    logging.Formatter(
+                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    )
+                )
+                self.logger.addHandler(file_handler)
 
     def log(self, message: str, level: str = "INFO") -> None:
         """Log a message with specified level."""

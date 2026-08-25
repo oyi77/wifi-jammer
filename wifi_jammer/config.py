@@ -55,9 +55,7 @@ class ConfigManager:
 
     def _get_default_config_path(self) -> str:
         """Get default configuration file path."""
-        config_dir = Path.home() / ".wifi_jammer"
-        config_dir.mkdir(exist_ok=True)
-        return str(config_dir / "config.yaml")
+        return str(Path.home() / ".wifi_jammer" / "config.yaml")
 
     def _load_config(self) -> ToolConfig:
         """Load configuration from file."""

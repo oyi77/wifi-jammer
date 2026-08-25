@@ -4,7 +4,6 @@ Channel hopping deauthentication attack implementation.
 
 import threading
 import time
-import subprocess
 from typing import Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -58,18 +57,10 @@ class ChannelHopAttack(BaseAttack):
                 if not self._running:
                     break
                 try:
-                    subprocess.run(
-                        [
-                            "iwconfig",
-                            self._config.interface if self._config else "",
-                            "channel",
-                            str(ch),
-                        ],
-                        capture_output=True,
-                        timeout=2,
-                    )
-                    self._current_channel = ch
-                except (subprocess.SubprocessError, OSError) as e:
+                    iface = self._config.interface if self._config else ""
+                    if self._set_channel(iface, ch):
+                        self._current_channel = ch
+                except OSError as e:
                     self.logger.warning(f"Failed to set channel {ch}: {e}")
                 time.sleep(self._hop_interval)
 

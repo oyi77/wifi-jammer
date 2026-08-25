@@ -2,6 +2,7 @@
 Base attack class for WiFi jamming attacks.
 """
 
+import copy
 import threading
 import time
 import os
@@ -65,6 +66,7 @@ class BaseAttack(IAttackStrategy, ABC):
         self._thread: Optional[threading.Thread] = None
         self._config: Optional[AttackConfig] = None
         self._stats = AttackStats()
+        self._stats_lock = threading.Lock()
         self._progress_callback: Optional[Callable[[AttackStats], None]] = None
         self._platform_interface = PlatformInterfaceFactory.create()
 
@@ -210,11 +212,9 @@ class BaseAttack(IAttackStrategy, ABC):
         return self._running
 
     def get_stats(self) -> AttackStats:
-        """Get current attack statistics."""
-        # Return a copy to prevent external modification
-        import copy
-
-        return copy.deepcopy(self._stats)
+        """Get a consistent snapshot of current attack statistics."""
+        with self._stats_lock:
+            return copy.deepcopy(self._stats)
 
     def set_progress_callback(self, callback: Callable[[AttackStats], None]) -> None:
         """Set progress callback function."""
@@ -360,7 +360,8 @@ class BaseAttack(IAttackStrategy, ABC):
 
     def _log_progress(self) -> None:
         """Log current attack progress."""
-        stats = self._stats
+        with self._stats_lock:
+            stats = copy.deepcopy(self._stats)
         duration = stats.duration
 
         if duration > 0:
@@ -375,7 +376,8 @@ class BaseAttack(IAttackStrategy, ABC):
 
     def _log_final_stats(self) -> None:
         """Log final attack statistics."""
-        stats = self._stats
+        with self._stats_lock:
+            stats = copy.deepcopy(self._stats)
         duration = stats.duration
 
         if duration > 0:

@@ -63,7 +63,8 @@ class AttackFactory(IAttackFactory):
 
     def get_available_attacks(self) -> List[AttackType]:
         """Get list of available attack types."""
-        return list(set(self._attack_classes.keys()) | set(self._lazy_attacks.keys()))
+        registered = set(self._attack_classes) | set(self._lazy_attacks)
+        return [at for at in AttackType if at in registered]
 
     def register_attack(
         self, attack_type: AttackType, attack_class: "Type[IAttackStrategy]"

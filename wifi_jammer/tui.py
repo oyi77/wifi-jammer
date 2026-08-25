@@ -202,7 +202,6 @@ class WiFiJammerApp(App[None]):
         # Show permission warning if applicable
         if hasattr(self, "_permission_warning") and self._permission_warning:
             self.update_scan_status(f"[yellow]⚠️  {self._permission_warning}[/yellow]")
-            time.sleep(2)  # Show warning briefly
 
         self._scanning = True
         self._scan_thread = threading.Thread(target=self._scan_loop)

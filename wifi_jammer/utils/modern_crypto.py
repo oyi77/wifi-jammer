@@ -4,7 +4,6 @@ Uses latest cryptography library and avoids deprecated algorithms.
 """
 
 import os
-import warnings
 from typing import Dict
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import hashes, hmac
@@ -14,16 +13,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 class ModernCrypto:
     """Modern cryptography utilities avoiding deprecated algorithms."""
-
-    def __init__(self) -> None:
-        """Initialize modern crypto utilities."""
-        # Suppress deprecation warnings
-        warnings.filterwarnings("ignore", category=DeprecationWarning)
-        warnings.filterwarnings("ignore", message=".*TripleDES.*")
-
-        # Set environment variables to disable FIPS and deprecated algorithms
-        os.environ["CRYPTOGRAPHY_DISABLE_FIPS"] = "1"
-        os.environ["CRYPTOGRAPHY_OPENSSL_NO_LEGACY"] = "1"
 
     @staticmethod
     def generate_secure_key(key_size: int = 256) -> bytes:

@@ -95,8 +95,8 @@ def find_python_with_permission() -> Optional[str]:
         return sys.executable  # On non-macOS, just use current Python
 
     # Check saved Python path first (in project root)
-    project_root = Path(__file__).parent.parent.parent
-    config_file = project_root / ".python_with_permission"
+    config_dir = Path.home() / ".config" / "wifi_jammer"
+    config_file = config_dir / "python_with_permission"
     if config_file.exists():
         try:
             with open(config_file, "r") as f:
@@ -129,6 +129,7 @@ def find_python_with_permission() -> Optional[str]:
         if has_access and has_deps:
             # Save for future use
             try:
+                config_dir.mkdir(parents=True, exist_ok=True)
                 with open(config_file, "w") as f:
                     f.write(python_exe)
             except (IOError, OSError, PermissionError):
