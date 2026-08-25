@@ -940,8 +940,9 @@ class MacOSScanner:
                 if not line:
                     continue
 
-                # Look for SSID
-                ssid_match = re.search(r"SSID\s*:\s*(.+)", line, re.IGNORECASE)
+                # Look for SSID — \b prevents matching inside "BSSID : ..." lines
+                # (substring "SSID" previously overwrote the SSID with the MAC)
+                ssid_match = re.search(r"\bSSID\s*:\s*(.+)", line, re.IGNORECASE)
                 if ssid_match:
                     current_network["ssid"] = ssid_match.group(1).strip()
 
@@ -977,32 +978,44 @@ class MacOSScanner:
                 elif "security" in line.lower() and "none" in line.lower():
                     current_network["encryption"] = "Open"
 
-                # If we have SSID and BSSID, create network info
-                if "ssid" in current_network and "bssid" in current_network:
-                    network_info = NetworkInfo(
-                        ssid=current_network.get("ssid", "Unknown"),
-                        bssid=current_network["bssid"],
-                        channel=current_network.get("channel", 0),
-                        rssi=current_network.get("rssi", -50),
-                        encryption=current_network.get("encryption", "Unknown"),
-                        clients=[],
-                    )
-
-                    with self.state.lock:
-                        if not any(
-                            n.bssid == network_info.bssid for n in self.state.networks
-                        ):
-                            self.state.networks.append(network_info)
-                            networks_found += 1
-                            self.logger.debug(
-                                f"wdutil found: {network_info.ssid} ({network_info.bssid})"
-                            )
-
+                # Flush only on the next network header (a "Name:" line without
+                # a field separator) — flushing at the BSSID line previously
+                # dropped channel/RSSI/security, which always trail it.
+                is_header = line.endswith(":") and ":" not in line[:-1]
+                if (
+                    is_header
+                    and current_network
+                    and "ssid" in current_network
+                    and "bssid" in current_network
+                ):
+                    networks_found += self._append_wdutil_network(current_network)
                     current_network = {}
+
+            if "ssid" in current_network and "bssid" in current_network:
+                networks_found += self._append_wdutil_network(current_network)
         except Exception as e:
             self.logger.debug(f"Error parsing wdutil scan: {e}")
 
         return networks_found
+
+    def _append_wdutil_network(self, data: Dict[str, Any]) -> int:
+        """Add one parsed wdutil network to state; returns 1 when newly added."""
+        network_info = NetworkInfo(
+            ssid=data.get("ssid", "Unknown"),
+            bssid=data["bssid"],
+            channel=data.get("channel", 0),
+            rssi=data.get("rssi", -50),
+            encryption=data.get("encryption", "Unknown"),
+            clients=[],
+        )
+        with self.state.lock:
+            if any(n.bssid == network_info.bssid for n in self.state.networks):
+                return 0
+            self.state.networks.append(network_info)
+        self.logger.debug(
+            f"wdutil found: {network_info.ssid} ({network_info.bssid})"
+        )
+        return 1
 
     def parse_airport_scan(self, output: str) -> int:
         """Parse airport -s output. Returns number of networks found."""
