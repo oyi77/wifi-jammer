@@ -56,7 +56,7 @@ all = [
 [project.scripts]
 wifi-jammer = "wifi_jammer.cli:cli"
 wifi-jammer-gui = "wifi_jammer.gui:launch_gui"
-wifi-jammer-tui = "wifi_jammer.tui:WiFiJammerApp"
+wifi-jammer-tui = "wifi_jammer.tui:main"
 
 [project.urls]
 Homepage = "https://github.com/oyi77/wifi-jammer"

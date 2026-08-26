@@ -478,11 +478,13 @@ class WiFiJammerApp(App[None]):
                 pass
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Console-script entry: launch the TUI, optionally with an interface."""
     import sys
 
-    if len(sys.argv) > 1:
-        app = WiFiJammerApp(sys.argv[1])
-        app.run()
-    else:
-        print("Usage: python3 -m wifi_jammer.tui <interface>")
+    interface = sys.argv[1] if len(sys.argv) > 1 else None
+    WiFiJammerApp(interface).run()
+
+
+if __name__ == "__main__":
+    main()

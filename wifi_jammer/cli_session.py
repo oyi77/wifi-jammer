@@ -90,7 +90,7 @@ class WiFiJammerCLI:
 ╔══════════════════════════════════════════════════════════════╗
 ║                    WiFi Jammer Tool                          ║
 ║              Advanced WiFi Jamming Utility                   ║
-║                    By Paijo - v1.0.0                        ║
+║                       v2.0 — wifi-jammer                     ║
 ╚══════════════════════════════════════════════════════════════╝
         """
         self.console.print(Panel(banner, style="cyan"))

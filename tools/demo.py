@@ -41,7 +41,7 @@ class WiFiJammerDemo:
 ╔══════════════════════════════════════════════════════════════╗
 ║                    WiFi Jammer Tool                          ║
 ║                        DEMO MODE                             ║
-║                    By Paijo - v1.0.0                        ║
+║                       v2.0 — wifi-jammer                     ║
 ╚══════════════════════════════════════════════════════════════╝
         """
         self.logger.info(banner)
