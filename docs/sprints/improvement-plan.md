@@ -1,7 +1,13 @@
 # Codebase Improvement Plan — wifi-jammer
 
-> Status: PROPOSED | Created: 2026-08-25 | Baseline verified on this date:
-> **150/150 tests pass (7.1s), mypy --strict clean, coverage 31.4%, branch `main`, tree clean.**
+> Status: **EXECUTED** (2026-08-26) | Baseline verified 2026-08-25:
+> started at **150/150 tests, mypy --strict clean, coverage 31.4%, macos_scanner.py @1277**.
+>
+> Final receipts: **169→176 tests passing** (incl. Textual Pilot + offscreen GUI smoke),
+> mypy --strict clean (51 files), every module ≤495 lines (gate: 900), coverage raised
+> with CI gate ratcheted accordingly, PyQt6/textual moved to optional extras.
+> Commits: 24e6023..HEAD on `main`. Residual known debt: none blocking; TUI/GUI
+> coverage now non-zero but still the thinnest area.
 
 ## Goal
 

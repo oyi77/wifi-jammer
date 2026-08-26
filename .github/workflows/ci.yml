@@ -47,7 +47,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        pytest tests/ -v --tb=short --cov=wifi_jammer --cov-report=term-missing --cov-report=xml --cov-fail-under=35
+        pytest tests/ -v --tb=short --cov=wifi_jammer --cov-report=term-missing --cov-report=xml --cov-fail-under=45
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
       with:
