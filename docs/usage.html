@@ -206,11 +206,16 @@ sudo wifi-jammer attack \
                 <li>💻 Keep you connected while others are kicked</li>
             </ol>
 
-            <h3>Standalone NetCut Tool</h3>
-            <p>For a dedicated NetCut experience:</p>
-            <pre><code>sudo python3 tools/netcut.py</code></pre>
+            <h3>NetCut-Style Kicking Is Built In</h3>
+            <p>The standalone script was removed — the same selective kicking
+            lives in the main tool. Either use the dedicated attack type:</p>
+            <pre><code>sudo wifi-jammer attack -i wlan0 -a netcut</code></pre>
+            <p>…or run an interactive deauth and answer
+            <em>"discover connected clients first?"</em> — the tool scans,
+            lists clients, and lets you kick specific ones while staying
+            connected.</p>
             <div class="alert alert-info">
-                <strong>Note:</strong> The NetCut tool requires you to be connected to the target WiFi network first.
+                <strong>Note:</strong> Stay connected to the target WiFi network first; your own device is excluded automatically.
             </div>
         </section>
 

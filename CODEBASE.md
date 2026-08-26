@@ -26,7 +26,7 @@ Educational WiFi security testing and penetration testing tool — supports 10 8
 | `wifi_jammer/gui/` | PyQt6 GUI — main_window, network_scanner_widget, attack_config_widget, progress_monitor_widget |
 | `wifi_jammer/utils/` | Logger, validators, platform utilities |
 | `tests/` | Test suite — CLI, scanner, attacks, factory, config, validators, platform utils, crypto |
-| `tools/` | Utilities — demo.py, netcut.py, setup_macos.py, check_root.py, kick_clients.py |
+| `tools/` | Utilities — demo.py, setup_macos.py, check_root.py, check_module_size.py (module-size ratchet gate) |
 | `examples/` | Example usage scripts |
 | `docs/` | GitHub Pages documentation site |
 | `Formula/` | Homebrew formula (wifi-jammer.rb) |
