@@ -112,19 +112,15 @@ class TestScapyNetworkScanner(unittest.TestCase):
                 mock_scan.assert_called_once_with("wlan0", None)
 
     def test_scan_networks_macos(self):
-        """Test network scanning on macOS."""
+        """Test network scanning on macOS delegates to the macOS facade."""
         mock_interface_info = Mock()
         mock_interface_info.status = "Available"
-        mock_interface_info.is_monitor_capable = True
 
         with (
             patch("wifi_jammer.scanner.network_scanner.is_macos", return_value=True),
             patch(
                 "wifi_jammer.scanner.network_scanner.PlatformInterfaceFactory"
             ) as mock_factory,
-            patch("wifi_jammer.scanner.network_scanner._COREWLAN_AVAILABLE", True),
-            patch("wifi_jammer.scanner.network_scanner._install_corewlan_if_needed"),
-            patch("wifi_jammer.scanner.network_scanner.sniff"),
         ):
             mock_platform_interface = Mock()
             mock_platform_interface.get_interface_info.return_value = (
@@ -134,14 +130,12 @@ class TestScapyNetworkScanner(unittest.TestCase):
 
             scanner = ScapyNetworkScanner(self.mock_logger)
 
-            with (
-                patch.object(
-                    scanner, "_scan_macos_networks_via_corewlan", return_value=1
-                ) as mock_scan,
-                patch.object(scanner, "_get_current_macos_network", return_value=None),
-            ):
+            with patch.object(
+                scanner._macos, "scan_networks"
+            ) as mock_scan:
                 scanner.scan_networks("wlan0")
                 mock_scan.assert_called_once_with("wlan0", None)
+
 
     def test_scan_networks_interface_not_available(self):
         """Test network scanning with unavailable interface."""

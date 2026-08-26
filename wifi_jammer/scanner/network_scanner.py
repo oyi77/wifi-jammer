@@ -289,67 +289,8 @@ class ScapyNetworkScanner(INetworkScanner):
 
             # Use platform-specific scanning
             if is_macos():
-                # Ensure CoreWLAN is installed (try again if needed)
-                _install_corewlan_if_needed()
-
-                # Step 1: Try CoreWLAN network scanning first (like JamWiFi does)
-                # This scans for all networks and may work even with privacy restrictions
-                if _COREWLAN_AVAILABLE:
-                    try:
-                        self.logger.info(
-                            "🔍 Scanning networks using CoreWLAN framework..."
-                        )
-                        corewlan_count = self._scan_macos_networks_via_corewlan(
-                            interface, channel
-                        )
-                        if corewlan_count > 0:
-                            self.logger.info(
-                                f"✅ CoreWLAN scan successful, found {corewlan_count} network(s)"
-                            )
-                    except (ImportError, AttributeError, OSError, RuntimeError) as e:
-                        self.logger.debug(
-                            f"CoreWLAN scan failed: {e}, trying fallback methods..."
-                        )
-
-                # Step 2: Try to get currently connected network (may be blocked by privacy)
-                try:
-                    current_network = self._get_current_macos_network(interface)
-                    if current_network:
-                        self.logger.info(
-                            f"Found current network: {current_network.ssid} ({current_network.bssid})"
-                        )
-                        with self._lock:
-                            # Only add if not already in list
-                            if not any(
-                                n.bssid == current_network.bssid
-                                or n.ssid == current_network.ssid
-                                for n in self._networks
-                            ):
-                                self._networks.append(current_network)
-                except (OSError, RuntimeError, AttributeError) as e:
-                    self.logger.debug(f"Could not get current network: {e}")
-
-                # Step 3: Fallback to airport/system tools if CoreWLAN didn't find enough networks
-                if len(self._networks) == 0:
-                    self.logger.info("Trying fallback scanning methods...")
-                try:
-                    self._scan_macos_networks(interface, channel)
-                except (OSError, FileNotFoundError, RuntimeError) as e:
-                    self.logger.warning(f"Fallback scanning methods failed: {e}")
-                    # Last resort: try basic scapy scanning (only if root)
-                    is_root = os.geteuid() == 0 if hasattr(os, "geteuid") else False
-                    if is_root:
-                        try:
-                            self.logger.info(
-                                "Attempting basic scapy-based scan (requires root)..."
-                            )
-                            self._scan_standard_networks(interface, channel)
-                        except (OSError, PermissionError, RuntimeError) as e2:
-                            self.logger.error(f"Scapy scanning also failed: {e2}")
-                    else:
-                        self.logger.info(
-                            "💡 Tip: Run with sudo for scapy-based scanning (more accurate results)"
-                        )
+                # macOS scanning lives entirely behind the facade collaborator
+                self._macos.scan_networks(interface, channel)
             else:
                 # Linux/Windows scanning
                 self._scan_standard_networks(interface, channel)
